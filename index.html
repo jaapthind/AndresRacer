@@ -3,1015 +3,2022 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Kart Bros 3D - Advanced Online WebRTC</title>
+<title>Kart Bros 3D - Arena Overhaul Edition</title>
 <style>
+    /* ==========================================================================
+       ADVANCED STYLESHEET DEFINITIONS
+       ========================================================================== */
     :root {
-        --primary: #ff3366;
-        --primary-glow: rgba(255, 51, 102, 0.6);
-        --bg-dark: #0a0a12;
-        --bg-panel: #1a1a24;
-        --text: #ffffff;
-        --text-dim: #aaaaaa;
-        --gold: #ffd700;
-        --success: #00ff66;
+        --ui-primary: #00e5ff;
+        --ui-secondary: #ff0055;
+        --ui-bg-dark: rgba(5, 5, 10, 0.95);
+        --ui-text-main: #ffffff;
+        --ui-text-muted: #8899aa;
+        --ui-accent: #ffdd00;
+        --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        --font-mono: 'Courier New', Courier, monospace;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: var(--bg-dark); color: var(--text); overflow: hidden; width: 100vw; height: 100vh; }
-    canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-    #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: flex; flex-direction: column; pointer-events: none; }
-    .screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; align-items: center; justify-content: center; flex-direction: column; background: radial-gradient(circle at center, #1a1a2a 0%, #05050a 100%); pointer-events: auto; }
-    .screen.active { display: flex; }
-    .panel { background: rgba(20, 20, 30, 0.9); border: 2px solid var(--primary); border-radius: 16px; padding: 40px; box-shadow: 0 0 30px var(--primary-glow); display: flex; flex-direction: column; align-items: center; min-width: 450px; backdrop-filter: blur(10px); }
-    h1 { font-size: 4rem; text-transform: uppercase; font-weight: 900; font-style: italic; color: transparent; -webkit-text-stroke: 2px var(--primary); text-shadow: 0 0 20px var(--primary-glow); margin-bottom: 40px; letter-spacing: 2px; }
-    h2 { font-size: 2rem; color: var(--text); margin-bottom: 20px; }
-    h3 { font-size: 1.5rem; color: var(--text-dim); margin-bottom: 15px; }
-    .btn-group { display: flex; flex-direction: column; gap: 15px; width: 100%; }
-    button { background: linear-gradient(45deg, #cc0033, var(--primary)); color: white; border: none; padding: 18px 24px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); outline: none; position: relative; overflow: hidden; }
-    button::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent); transform: skewX(-20deg); transition: 0.5s; }
-    button:hover::after { left: 150%; }
-    button:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 20px var(--primary-glow); }
-    button:active { transform: translateY(2px) scale(0.98); }
-    button.secondary { background: linear-gradient(45deg, #333, #555); }
-    button.success { background: linear-gradient(45deg, #009933, var(--success)); color: black; }
-    button:disabled { background: #333; color: #666; cursor: not-allowed; box-shadow: none; transform: none; }
-    input[type="text"] { background: rgba(0,0,0,0.5); border: 2px solid #444; color: white; padding: 15px; font-size: 1.5rem; border-radius: 8px; text-align: center; width: 100%; outline: none; transition: 0.3s; text-transform: uppercase; font-family: monospace; letter-spacing: 5px; margin-bottom: 20px; }
-    input[type="text"]:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
     
-    .stats-container { width: 100%; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-    .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .stat-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-    .stat-val { font-family: monospace; font-size: 1.4rem; color: var(--gold); }
-    .color-picker { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 20px 0; }
-    .color-swatch { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 3px solid #333; transition: 0.2s; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-    .color-swatch:hover { transform: scale(1.1); }
-    .color-swatch.active { border-color: white; transform: scale(1.15); box-shadow: 0 0 15px currentColor; }
+    * { 
+        box-sizing: border-box; 
+        margin: 0; 
+        padding: 0; 
+        user-select: none; 
+    }
     
-    .lobby-info { width: 100%; text-align: center; margin-bottom: 30px; }
-    .lobby-code-box { background: rgba(0,0,0,0.5); border: 2px dashed var(--primary); padding: 20px; border-radius: 8px; margin: 15px 0; }
-    .lobby-code { font-size: 3rem; font-family: monospace; color: var(--gold); letter-spacing: 10px; user-select: text; cursor: text; }
-    .player-list { width: 100%; list-style: none; margin-bottom: 20px; max-height: 250px; overflow-y: auto; }
-    .player-list li { background: rgba(255,255,255,0.05); margin-bottom: 8px; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; transition: 0.3s; border-left: 5px solid transparent; }
-    .player-list li.is-host { border-left-color: var(--gold); }
+    body, html { 
+        width: 100vw; 
+        height: 100vh; 
+        overflow: hidden; 
+        background-color: #000; 
+        font-family: var(--font-main);
+    }
     
-    #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; display: none; padding: 20px; }
-    .hud-panel { background: rgba(10, 10, 15, 0.8); border: 2px solid var(--primary); border-radius: 12px; padding: 15px 25px; position: absolute; backdrop-filter: blur(5px); box-shadow: 0 0 15px rgba(0,0,0,0.5); }
-    #hud-top-left { top: 20px; left: 20px; border-color: var(--gold); }
-    #hud-money { font-size: 2rem; color: var(--gold); font-family: monospace; font-weight: bold; }
-    #hud-bottom-right { bottom: 20px; right: 20px; text-align: right; }
-    #hud-speed { font-size: 2.5rem; font-family: monospace; font-weight: bold; color: white; font-style: italic; }
-    #hud-speed span { font-size: 1rem; color: var(--text-dim); font-style: normal; }
-    #hud-bottom-left { bottom: 20px; left: 20px; width: 100px; height: 100px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border-width: 4px; border-color: #00ffff; box-shadow: 0 0 20px rgba(0,255,255,0.3); }
-    #hud-item { font-size: 3rem; text-shadow: 0 0 10px #00ffff; }
-    #hud-top-right { top: 20px; right: 20px; border-color: #444; }
-    #leaderboard { list-style: none; font-family: monospace; font-size: 1.2rem; }
-    #leaderboard li { margin-bottom: 5px; display: flex; justify-content: space-between; gap: 20px; }
+    /* --------------------------------------------------------------------------
+       RENDERER CONTAINERS
+       -------------------------------------------------------------------------- */
+    #engine-container { 
+        position: absolute; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        z-index: 1; 
+    }
     
-    #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; pointer-events: none; display: flex; flex-direction: column; gap: 10px; }
-    .toast { background: rgba(0,0,0,0.9); border-left: 5px solid var(--primary); color: white; padding: 15px 25px; border-radius: 4px; font-weight: bold; font-size: 1.1rem; box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: slideDown 0.3s forwards, fadeOut 0.3s forwards 2.7s; opacity: 0; transform: translateY(-20px); }
-    .toast.success { border-left-color: var(--success); }
-    .toast.warning { border-left-color: var(--gold); }
-    @keyframes slideDown { to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeOut { to { opacity: 0; transform: translateY(-20px); } }
+    canvas { 
+        display: block; 
+        width: 100%; 
+        height: 100%; 
+        image-rendering: optimizeSpeed;
+    }
+
+    /* --------------------------------------------------------------------------
+       USER INTERFACE OVERLAYS
+       -------------------------------------------------------------------------- */
+    #interface-layer { 
+        position: absolute; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        z-index: 10; 
+        display: flex; 
+        flex-direction: column; 
+        pointer-events: none; 
+    }
     
-    #loading-screen { background: #05050a; z-index: 999; }
-    .loader { border: 5px solid #333; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .ui-view { 
+        display: none; 
+        width: 100%; 
+        height: 100%; 
+        position: absolute; 
+        top: 0; 
+        left: 0; 
+        align-items: center; 
+        justify-content: center; 
+        flex-direction: column; 
+        background: radial-gradient(circle at center, #11111a 0%, #000000 100%); 
+        pointer-events: auto; 
+    }
     
-    .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; pointer-events: none; display: none; }
-    .crosshair::before, .crosshair::after { content: ''; position: absolute; background: rgba(255,255,255,0.5); }
-    .crosshair::before { top: 50%; left: -5px; right: -5px; height: 2px; transform: translateY(-50%); }
-    .crosshair::after { left: 50%; top: -5px; bottom: -5px; width: 2px; transform: translateX(-50%); }
+    .ui-view.is-active { 
+        display: flex; 
+    }
     
-    #damage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, transparent 50%, rgba(255,0,0,0.3) 100%); pointer-events: none; opacity: 0; transition: opacity 0.1s; z-index: 4; }
+    .ui-panel { 
+        background: var(--ui-bg-dark); 
+        border: 2px solid var(--ui-primary); 
+        border-radius: 12px; 
+        padding: 50px; 
+        box-shadow: 0 0 40px rgba(0, 229, 255, 0.2), inset 0 0 20px rgba(0, 229, 255, 0.1); 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        min-width: 500px; 
+        backdrop-filter: blur(12px); 
+    }
+    
+    /* --------------------------------------------------------------------------
+       TYPOGRAPHY
+       -------------------------------------------------------------------------- */
+    h1 { 
+        font-size: 5rem; 
+        text-transform: uppercase; 
+        font-weight: 900; 
+        font-style: italic; 
+        color: transparent; 
+        -webkit-text-stroke: 3px var(--ui-primary); 
+        text-shadow: 0 0 30px rgba(0, 229, 255, 0.6); 
+        margin-bottom: 50px; 
+        letter-spacing: 4px; 
+    }
+    
+    h2 { font-size: 2.5rem; color: var(--ui-text-main); margin-bottom: 25px; }
+    h3 { font-size: 1.8rem; color: var(--ui-text-muted); margin-bottom: 20px; }
+    
+    /* --------------------------------------------------------------------------
+       CONTROLS & INPUTS
+       -------------------------------------------------------------------------- */
+    .button-stack { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 20px; 
+        width: 100%; 
+    }
+    
+    .action-btn { 
+        background: linear-gradient(135deg, #0055ff, var(--ui-primary)); 
+        color: white; 
+        border: none; 
+        padding: 20px 30px; 
+        font-size: 1.4rem; 
+        font-weight: 900; 
+        border-radius: 6px; 
+        cursor: pointer; 
+        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); 
+        text-transform: uppercase; 
+        letter-spacing: 2px; 
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); 
+        position: relative; 
+        overflow: hidden; 
+    }
+    
+    .action-btn::before { 
+        content: ''; 
+        position: absolute; 
+        top: 0; 
+        left: -100%; 
+        width: 50%; 
+        height: 100%; 
+        background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent); 
+        transform: skewX(-25deg); 
+        transition: 0.5s; 
+    }
+    
+    .action-btn:hover::before { left: 150%; }
+    .action-btn:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 10px 25px rgba(0, 229, 255, 0.5); }
+    .action-btn:active { transform: translateY(2px) scale(0.97); }
+    
+    .action-btn.variant-alt { background: linear-gradient(135deg, #333344, #555566); }
+    .action-btn.variant-warn { background: linear-gradient(135deg, #aa0022, var(--ui-secondary)); }
+    .action-btn.variant-success { background: linear-gradient(135deg, #00aa44, #00ff66); color: #000; }
+    .action-btn:disabled { background: #222; color: #555; cursor: not-allowed; box-shadow: none; transform: none; }
+    
+    .text-input { 
+        background: rgba(0,0,0,0.6); 
+        border: 2px solid #334; 
+        color: var(--ui-primary); 
+        padding: 20px; 
+        font-size: 2rem; 
+        border-radius: 6px; 
+        text-align: center; 
+        width: 100%; 
+        outline: none; 
+        transition: 0.2s; 
+        text-transform: uppercase; 
+        font-family: var(--font-mono); 
+        letter-spacing: 8px; 
+        margin-bottom: 25px; 
+    }
+    
+    .text-input:focus { border-color: var(--ui-primary); box-shadow: 0 0 20px rgba(0, 229, 255, 0.3); }
+
+    /* --------------------------------------------------------------------------
+       HUD ELEMENTS
+       -------------------------------------------------------------------------- */
+    #hud-layer { 
+        position: absolute; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        pointer-events: none; 
+        z-index: 5; 
+        display: none; 
+        padding: 30px; 
+    }
+    
+    .hud-widget { 
+        background: rgba(10, 15, 20, 0.75); 
+        border: 2px solid var(--ui-primary); 
+        border-radius: 8px; 
+        padding: 20px 30px; 
+        position: absolute; 
+        backdrop-filter: blur(8px); 
+        box-shadow: 0 0 20px rgba(0,0,0,0.6); 
+    }
+    
+    #widget-currency { top: 30px; left: 30px; border-color: var(--ui-accent); font-size: 2.5rem; color: var(--ui-accent); font-family: var(--font-mono); font-weight: bold; }
+    #widget-telemetry { bottom: 30px; right: 30px; text-align: right; }
+    #telemetry-speed { font-size: 3.5rem; font-family: var(--font-mono); font-weight: bold; color: #fff; font-style: italic; }
+    #telemetry-speed span { font-size: 1.2rem; color: var(--ui-text-muted); font-style: normal; margin-left: 5px; }
+    
+    #widget-inventory { 
+        bottom: 30px; 
+        left: 30px; 
+        width: 120px; 
+        height: 120px; 
+        border-radius: 50%; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        border-width: 4px; 
+        border-color: #ff00ff; 
+        box-shadow: 0 0 30px rgba(255, 0, 255, 0.4); 
+    }
+    
+    #inventory-icon { font-size: 4rem; text-shadow: 0 0 15px #ff00ff; }
+    #widget-standings { top: 30px; right: 30px; border-color: #445; min-width: 250px; }
+    
+    .standings-list { list-style: none; font-family: var(--font-mono); font-size: 1.4rem; }
+    .standings-list li { margin-bottom: 8px; display: flex; justify-content: space-between; gap: 30px; }
+    
+    /* --------------------------------------------------------------------------
+       SYSTEM NOTIFICATIONS
+       -------------------------------------------------------------------------- */
+    #notification-bus { 
+        position: fixed; 
+        top: 30px; 
+        left: 50%; 
+        transform: translateX(-50%); 
+        z-index: 100; 
+        pointer-events: none; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 12px; 
+    }
+    
+    .sys-toast { 
+        background: rgba(0,0,0,0.95); 
+        border-left: 6px solid var(--ui-primary); 
+        color: white; 
+        padding: 18px 30px; 
+        border-radius: 4px; 
+        font-weight: bold; 
+        font-size: 1.2rem; 
+        box-shadow: 0 8px 20px rgba(0,0,0,0.6); 
+        animation: toastIn 0.3s forwards, toastOut 0.3s forwards 3.5s; 
+        opacity: 0; 
+        transform: translateY(-20px); 
+    }
+    
+    .sys-toast.t-success { border-left-color: #00ff66; }
+    .sys-toast.t-warn { border-left-color: var(--ui-accent); }
+    .sys-toast.t-err { border-left-color: var(--ui-secondary); }
+    
+    @keyframes toastIn { to { opacity: 1; transform: translateY(0); } }
+    @keyframes toastOut { to { opacity: 0; transform: translateY(-20px); } }
+    
+    /* --------------------------------------------------------------------------
+       VISUAL EFFECTS OVERLAYS
+       -------------------------------------------------------------------------- */
+    #vfx-damage { 
+        position: absolute; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: radial-gradient(circle, transparent 40%, rgba(255,0,0,0.4) 100%); 
+        pointer-events: none; 
+        opacity: 0; 
+        transition: opacity 0.15s; 
+        z-index: 4; 
+    }
+
+    .reticle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 30px;
+        height: 30px;
+        pointer-events: none;
+        display: none;
+        z-index: 6;
+    }
+    .reticle::before, .reticle::after { content: ''; position: absolute; background: rgba(0, 255, 255, 0.6); }
+    .reticle::before { top: 14px; left: -10px; right: -10px; height: 2px; }
+    .reticle::after { left: 14px; top: -10px; bottom: -10px; width: 2px; }
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
 </head>
 <body>
 
-<div id="game-canvas-container"><canvas id="game-canvas"></canvas></div>
-<div id="damage-overlay"></div>
-<div id="crosshair" class="crosshair"></div>
+<div id="engine-container"><canvas id="engine-canvas"></canvas></div>
 
-<div id="toast-container"></div>
+<div id="vfx-damage"></div>
+<div id="reticle-center" class="reticle"></div>
 
-<div id="ui-layer">
-    <div id="screen-loading" class="screen active">
-        <div class="loader"></div>
-        <h2 id="loading-text">INITIALIZING ENGINE...</h2>
+<div id="notification-bus"></div>
+
+<div id="interface-layer">
+    
+    <div id="view-init" class="ui-view is-active">
+        <h2 style="color: var(--ui-primary); font-family: var(--font-mono);">INITIALIZING ENGINE PIPELINE...</h2>
     </div>
 
-    <div id="screen-main" class="screen">
+    <div id="view-root" class="ui-view">
         <h1>KART BROS 3D</h1>
-        <div class="panel">
-            <div class="btn-group">
-                <button onclick="UI.nav('screen-garage')">Garage & Upgrades</button>
-                <button onclick="Net.hostGame()">Host Game Lobby</button>
-                <button onclick="UI.nav('screen-join')">Join Game Lobby</button>
-                <button class="secondary" onclick="Settings.toggleAudio()">Toggle Audio</button>
+        <div class="ui-panel">
+            <div class="button-stack">
+                <button class="action-btn" onclick="InterfaceController.navigate('view-garage')">ACCESS GARAGE</button>
+                <button class="action-btn" onclick="NetworkController.initializeHost()">HOST ARENA</button>
+                <button class="action-btn" onclick="InterfaceController.navigate('view-connect')">JOIN ARENA</button>
             </div>
         </div>
     </div>
 
-    <div id="screen-garage" class="screen">
-        <h1>GARAGE</h1>
-        <div class="panel">
-            <div class="stats-container">
-                <div class="stat-row">
-                    <h3>Wallet Balance</h3>
-                    <div class="stat-val">$<span id="garage-money">0</span></div>
-                </div>
-                <div class="stat-row">
-                    <div>
-                        <h3>Top Speed</h3>
-                        <span style="color:var(--text-dim)">Level <span id="lvl-speed">1</span>/10</span>
-                    </div>
-                    <button class="success" style="padding: 10px 20px;" onclick="Garage.upgrade('speed')">Upgrade $<span id="cost-speed">100</span></button>
-                </div>
-                <div class="stat-row">
-                    <div>
-                        <h3>Acceleration</h3>
-                        <span style="color:var(--text-dim)">Level <span id="lvl-accel">1</span>/10</span>
-                    </div>
-                    <button class="success" style="padding: 10px 20px;" onclick="Garage.upgrade('accel')">Upgrade $<span id="cost-accel">100</span></button>
-                </div>
-                <div class="stat-row">
-                    <div>
-                        <h3>Handling</h3>
-                        <span style="color:var(--text-dim)">Level <span id="lvl-hand">1</span>/10</span>
-                    </div>
-                    <button class="success" style="padding: 10px 20px;" onclick="Garage.upgrade('hand')">Upgrade $<span id="cost-hand">100</span></button>
-                </div>
+    <div id="view-garage" class="ui-view">
+        <h1>GARAGE OPERATIONS</h1>
+        <div class="ui-panel" style="min-width: 600px;">
+            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 2px solid #334; padding-bottom: 20px; margin-bottom: 20px;">
+                <h3>AVAILABLE FUNDS</h3>
+                <div style="font-family: var(--font-mono); font-size: 2rem; color: var(--ui-accent);">$<span id="garage-funds-disp">0</span></div>
             </div>
             
-            <h3>Paint Job</h3>
-            <div id="color-picker" class="color-picker"></div>
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px;">
+                    <div>
+                        <h3 style="margin:0; color: #fff;">TOP SPEED MODULE</h3>
+                        <span style="color: var(--ui-text-muted); font-family: var(--font-mono);">TIER <span id="tier-spd">1</span>/10</span>
+                    </div>
+                    <button class="action-btn variant-success" style="padding: 10px 20px; font-size: 1rem;" onclick="GarageController.processUpgrade('spd')">UPGRADE $<span id="cost-spd">150</span></button>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px;">
+                    <div>
+                        <h3 style="margin:0; color: #fff;">ACCELERATION DRIVE</h3>
+                        <span style="color: var(--ui-text-muted); font-family: var(--font-mono);">TIER <span id="tier-acc">1</span>/10</span>
+                    </div>
+                    <button class="action-btn variant-success" style="padding: 10px 20px; font-size: 1rem;" onclick="GarageController.processUpgrade('acc')">UPGRADE $<span id="cost-acc">150</span></button>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px;">
+                    <div>
+                        <h3 style="margin:0; color: #fff;">HANDLING CHASSIS</h3>
+                        <span style="color: var(--ui-text-muted); font-family: var(--font-mono);">TIER <span id="tier-hnd">1</span>/10</span>
+                    </div>
+                    <button class="action-btn variant-success" style="padding: 10px 20px; font-size: 1rem;" onclick="GarageController.processUpgrade('hnd')">UPGRADE $<span id="cost-hnd">150</span></button>
+                </div>
+            </div>
 
-            <button class="secondary" style="margin-top:20px; width:100%" onclick="UI.nav('screen-main')">Back to Menu</button>
+            <div style="margin-top: 30px; width: 100%; text-align: center;">
+                <h3 style="margin-bottom: 15px;">CHASSIS PIGMENT</h3>
+                <div id="pigment-selector" style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;"></div>
+            </div>
+
+            <button class="action-btn variant-alt" style="margin-top:40px; width:100%" onclick="InterfaceController.navigate('view-root')">RETURN TO ROOT</button>
         </div>
     </div>
 
-    <div id="screen-join" class="screen">
-        <h1>JOIN LOBBY</h1>
-        <div class="panel">
-            <input type="text" id="join-code-input" placeholder="ENTER 5-LETTER CODE" maxlength="5" autocomplete="off">
-            <div class="btn-group">
-                <button onclick="Net.joinGame()">Connect to Host</button>
-                <button class="secondary" onclick="UI.nav('screen-main')">Back</button>
+    <div id="view-connect" class="ui-view">
+        <h1>UPLINK ESTABLISHMENT</h1>
+        <div class="ui-panel">
+            <input type="text" id="uplink-code" class="text-input" placeholder="ENTER 5-CHAR HASH" maxlength="5" autocomplete="off">
+            <div class="button-stack">
+                <button class="action-btn" onclick="NetworkController.initializeClient()">INITIALIZE UPLINK</button>
+                <button class="action-btn variant-alt" onclick="InterfaceController.navigate('view-root')">ABORT</button>
             </div>
         </div>
     </div>
 
-    <div id="screen-lobby" class="screen">
-        <h1>GAME LOBBY</h1>
-        <div class="panel" style="min-width: 600px;">
-            <div class="lobby-info">
-                <h3>ROOM CODE</h3>
-                <div class="lobby-code-box">
-                    <span id="lobby-code-display" class="lobby-code">.....</span>
+    <div id="view-staging" class="ui-view">
+        <h1>ARENA STAGING</h1>
+        <div class="ui-panel" style="min-width: 700px;">
+            <div style="text-align: center; margin-bottom: 40px; width: 100%;">
+                <h3 style="letter-spacing: 4px;">UPLINK HASH</h3>
+                <div style="background: rgba(0,0,0,0.6); border: 2px dashed var(--ui-primary); padding: 20px; border-radius: 8px; margin-top: 10px;">
+                    <span id="hash-display" style="font-size: 4rem; font-family: var(--font-mono); color: var(--ui-accent); letter-spacing: 15px;">-----</span>
                 </div>
-                <p style="color:var(--text-dim)">Share this code with up to 4 other players.</p>
             </div>
             
-            <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3>Connected Players (<span id="player-count">1</span>/5)</h3>
+            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid #445; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="margin:0;">CONNECTED ENTITIES</h3>
+                <h3 style="margin:0; font-family: var(--font-mono);"><span id="entity-count">1</span>/8</h3>
             </div>
             
-            <ul id="lobby-player-list" class="player-list">
+            <ul id="entity-list" style="width: 100%; list-style: none; max-height: 300px; overflow-y: auto; margin-bottom: 30px;">
                 </ul>
 
-            <div class="btn-group" style="margin-top: 20px;">
-                <button id="btn-start-game" class="success" style="display:none; font-size:1.5rem;" onclick="Net.startGame()">START RACE</button>
-                <button id="btn-waiting-host" class="secondary" disabled style="display:none;">Waiting for Host...</button>
-                <button class="secondary" onclick="Net.disconnect()">Leave Lobby</button>
+            <div class="button-stack">
+                <button id="cmd-deploy" class="action-btn variant-success" style="display:none; font-size: 1.8rem;" onclick="EngineCore.deployArena()">DEPLOY ARENA</button>
+                <button id="cmd-standby" class="action-btn variant-alt" disabled style="display:none;">AWAITING HOST DEPLOYMENT...</button>
+                <button class="action-btn variant-warn" onclick="NetworkController.terminateUplink()">TERMINATE UPLINK</button>
             </div>
         </div>
     </div>
 
-    <div id="hud">
-        <div id="hud-top-left" class="hud-panel">
-            <div id="hud-money">$0</div>
+    <div id="hud-layer">
+        <div id="widget-currency" class="hud-widget">$0</div>
+        
+        <div id="widget-standings" class="hud-widget">
+            <ul id="telemetry-standings" class="standings-list"></ul>
         </div>
-        <div id="hud-top-right" class="hud-panel">
-            <ul id="leaderboard"></ul>
+        
+        <div id="widget-inventory" class="hud-widget">
+            <div id="inventory-icon">?</div>
         </div>
-        <div id="hud-bottom-left" class="hud-panel">
-            <div id="hud-item">?</div>
-        </div>
-        <div id="hud-bottom-right" class="hud-panel">
-            <div id="hud-speed">000 <span>KPH</span></div>
+        
+        <div id="widget-telemetry" class="hud-widget">
+            <div id="telemetry-speed">000<span>KM/H</span></div>
         </div>
     </div>
 </div>
 
 <script>
-/**
- * UTILITIES
- */
-const Utils = {
-    generateID: () => Math.random().toString(36).substring(2, 7).toUpperCase(),
+/* ==========================================================================
+   CORE UTILITY LIBRARY
+   ========================================================================== */
+const MathUtils = {
+    generateHash: (len = 5) => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for(let i = 0; i < len; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+        return result;
+    },
     clamp: (val, min, max) => Math.min(Math.max(val, min), max),
-    lerp: (start, end, amt) => (1 - amt) * start + amt * end,
-    rand: (min, max) => Math.random() * (max - min) + min,
-    distance2D: (x1, z1, x2, z2) => Math.sqrt((x2-x1)**2 + (z2-z1)**2)
+    lerp: (start, end, factor) => (1 - factor) * start + factor * end,
+    randomRange: (min, max) => Math.random() * (max - min) + min,
+    distance2D: (x1, z1, x2, z2) => Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(z2 - z1, 2)),
+    easeOutQuad: (x) => 1 - (1 - x) * (1 - x)
 };
 
-const UI = {
-    toast: (msg, type='info') => {
-        const c = document.getElementById('toast-container');
-        const t = document.createElement('div');
-        t.className = `toast ${type}`;
-        t.innerText = msg;
-        c.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
-    },
-    nav: (screenId) => {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        if(screenId) document.getElementById(screenId).classList.add('active');
-        if(screenId === 'screen-garage') Garage.updateUI();
-    },
-    updateLobby: () => {
-        const list = document.getElementById('lobby-player-list');
-        list.innerHTML = '';
-        const players = Object.values(State.players);
-        document.getElementById('player-count').innerText = players.length;
-        
-        players.forEach(p => {
-            const li = document.createElement('li');
-            li.style.borderLeftColor = p.color;
-            if(p.isHost) li.classList.add('is-host');
-            
-            let html = `<div><span style="display:inline-block; width:15px; height:15px; border-radius:50%; background:${p.color}; margin-right:10px;"></span>`;
-            html += `<strong>${p.id === State.localId ? 'You' : 'Player ' + p.id.substring(0,4)}</strong>`;
-            if(p.isHost) html += ` <span style="color:var(--gold); font-size:0.8rem;">[HOST]</span>`;
-            html += `</div><div>Spd:${p.stats.speed} Acc:${p.stats.accel}</div>`;
-            li.innerHTML = html;
-            list.appendChild(li);
-        });
-
-        if(State.isHost) {
-            document.getElementById('btn-start-game').style.display = 'block';
-            document.getElementById('btn-waiting-host').style.display = 'none';
-        } else {
-            document.getElementById('btn-start-game').style.display = 'none';
-            document.getElementById('btn-waiting-host').style.display = 'block';
-        }
-    },
-    updateHUD: () => {
-        if(!State.inGame) return;
-        document.getElementById('hud-money').innerText = `$${Save.data.money}`;
-        if(Engine.localKart) {
-            const speed = Math.abs(Math.round(Engine.localKart.velocity.length() * 60)); // pseudo KPH
-            document.getElementById('hud-speed').innerHTML = `${speed.toString().padStart(3, '0')} <span>KPH</span>`;
-            
-            const item = Engine.localKart.item;
-            const itemMap = { 0: '?', 1: '🚀', 2: '💣', 3: '⚡' };
-            document.getElementById('hud-item').innerText = itemMap[item] || '✖';
-        }
-
-        // Leaderboard (sort by score/money for now)
-        const lb = document.getElementById('leaderboard');
-        lb.innerHTML = '';
-        const sorted = Object.values(State.players).sort((a,b) => b.score - a.score);
-        sorted.forEach((p, i) => {
-            const li = document.createElement('li');
-            li.style.color = p.id === State.localId ? var(--gold) : 'white';
-            li.innerHTML = `<span>${i+1}. ${p.id.substring(0,4)}</span><span>${p.score}</span>`;
-            lb.appendChild(li);
-        });
-    },
-    damageEffect: () => {
-        const overlay = document.getElementById('damage-overlay');
-        overlay.style.opacity = '1';
-        setTimeout(() => overlay.style.opacity = '0', 200);
-    }
+/* ==========================================================================
+   STATE ARCHITECTURE & DATA PERSISTENCE
+   ========================================================================== */
+const AppState = {
+    networkRole: 'NONE', // 'HOST', 'CLIENT', 'NONE'
+    engineStatus: 'IDLE', // 'IDLE', 'STAGING', 'ACTIVE'
+    localIdentifier: null,
+    hostIdentifier: null,
+    maximumEntities: 8,
+    tickRateHz: 30, // Physics and Net interpolation rate
+    entityRegistry: {} // Stores player data, stats, scores
 };
 
-/**
- * SAVE DATA
- */
-const Save = {
-    data: { money: 500, speed: 1, accel: 1, hand: 1, color: '#ff3366' },
-    colors: ['#ff3366', '#33ccff', '#33ff33', '#ffff33', '#ff9933', '#cc33ff', '#ffffff', '#222222'],
-    load: () => {
-        const d = localStorage.getItem('kartSave');
-        if(d) Save.data = { ...Save.data, ...JSON.parse(d) };
+const DataStore = {
+    profile: {
+        funds: 2500,
+        stats: { spd: 1, acc: 1, hnd: 1 },
+        pigment: '#00e5ff'
     },
-    save: () => localStorage.setItem('kartSave', JSON.stringify(Save.data)),
-    addMoney: (amt) => { Save.data.money += amt; Save.save(); UI.updateHUD(); }
-};
-Save.load();
-
-const Garage = {
-    updateUI: () => {
-        document.getElementById('garage-money').innerText = Save.data.money;
-        ['speed', 'accel', 'hand'].forEach(stat => {
-            const lvl = Save.data[stat];
-            document.getElementById(`lvl-${stat}`).innerText = lvl;
-            document.getElementById(`cost-${stat}`).innerText = lvl >= 10 ? 'MAX' : lvl * 150;
-            document.querySelector(`button[onclick="Garage.upgrade('${stat}')"]`).disabled = lvl >= 10;
-        });
-        
-        const cp = document.getElementById('color-picker');
-        cp.innerHTML = '';
-        Save.colors.forEach(c => {
-            const d = document.createElement('div');
-            d.className = `color-swatch ${Save.data.color === c ? 'active' : ''}`;
-            d.style.backgroundColor = c;
-            d.onclick = () => { Save.data.color = c; Save.save(); Garage.updateUI(); };
-            cp.appendChild(d);
-        });
-    },
-    upgrade: (stat) => {
-        const cost = Save.data[stat] * 150;
-        if(Save.data.money >= cost && Save.data[stat] < 10) {
-            Save.data.money -= cost;
-            Save.data[stat]++;
-            Save.save();
-            Garage.updateUI();
-            UI.toast('Upgrade Successful!', 'success');
-            AudioSys.play('upgrade');
-        } else if (Save.data[stat] >= 10) {
-            UI.toast('Max Level Reached!', 'warning');
-        } else {
-            UI.toast('Not enough money!', 'warning');
-            AudioSys.play('error');
-        }
-    }
-};
-
-/**
- * AUDIO SYSTEM (Web Audio API Synthesizer)
- */
-const AudioSys = {
-    ctx: null, enabled: true,
-    init: () => { if(!AudioSys.ctx) AudioSys.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
-    play: (type) => {
-        if(!AudioSys.enabled) return;
-        AudioSys.init();
-        const t = AudioSys.ctx.currentTime;
-        const osc = AudioSys.ctx.createOscillator();
-        const gain = AudioSys.ctx.createGain();
-        osc.connect(gain); gain.connect(AudioSys.ctx.destination);
-        
-        if(type === 'coin') {
-            osc.type = 'sine'; osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(1200, t + 0.1);
-            gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.3, t + 0.05); gain.gain.linearRampToValueAtTime(0, t + 0.3);
-            osc.start(t); osc.stop(t + 0.3);
-        } else if (type === 'upgrade') {
-            osc.type = 'square'; osc.frequency.setValueAtTime(400, t); osc.frequency.setValueAtTime(600, t+0.1); osc.frequency.setValueAtTime(800, t+0.2);
-            gain.gain.setValueAtTime(0.1, t); gain.gain.linearRampToValueAtTime(0, t + 0.4);
-            osc.start(t); osc.stop(t + 0.4);
-        } else if (type === 'error') {
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, t); osc.frequency.linearRampToValueAtTime(100, t+0.2);
-            gain.gain.setValueAtTime(0.2, t); gain.gain.linearRampToValueAtTime(0, t + 0.2);
-            osc.start(t); osc.stop(t + 0.2);
-        } else if (type === 'shoot') {
-            osc.type = 'square'; osc.frequency.setValueAtTime(200, t); osc.frequency.exponentialRampToValueAtTime(50, t+0.2);
-            gain.gain.setValueAtTime(0.2, t); gain.gain.exponentialRampToValueAtTime(0.01, t+0.2);
-            osc.start(t); osc.stop(t+0.2);
-        } else if (type === 'hit') {
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, t);
-            gain.gain.setValueAtTime(0.5, t); gain.gain.exponentialRampToValueAtTime(0.01, t+0.3);
-            osc.start(t); osc.stop(t+0.3);
-        }
-    }
-};
-
-const Settings = {
-    toggleAudio: () => { AudioSys.enabled = !AudioSys.enabled; UI.toast(`Audio ${AudioSys.enabled ? 'ON' : 'OFF'}`); }
-};
-
-/**
- * GAME STATE & INPUT
- */
-const State = {
-    isHost: false, inGame: false, localId: null, players: {}, 
-    maxPlayers: 5, tickRate: 20 // Server updates per sec
-};
-
-const Input = {
-    up:0, down:0, left:0, right:0, action:0,
-    bind: () => {
-        window.addEventListener('keydown', e => Input.set(e.code, 1));
-        window.addEventListener('keyup', e => Input.set(e.code, 0));
-    },
-    set: (code, val) => {
-        if(code==='ArrowUp'||code==='KeyW') Input.up=val;
-        if(code==='ArrowDown'||code==='KeyS') Input.down=val;
-        if(code==='ArrowLeft'||code==='KeyA') Input.left=val;
-        if(code==='ArrowRight'||code==='KeyD') Input.right=val;
-        if(code==='Space') Input.action=val;
-    },
-    getState: () => ({u:Input.up, d:Input.down, l:Input.left, r:Input.right, a:Input.action})
-};
-Input.bind();
-
-/**
- * NETWORKING (PEERJS)
- * Uses public STUN servers for robust NAT traversal.
- */
-const Net = {
-    peer: null, hostConn: null, clients: {},
+    palette: ['#00e5ff', '#ff0055', '#ffdd00', '#00ff66', '#bd00ff', '#ffffff', '#111111', '#ff5500'],
     
-    initPeer: () => {
-        return new Promise((resolve, reject) => {
-            const id = Utils.generateID();
-            Net.peer = new Peer(id, {
-                config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] },
-                debug: 1
-            });
-            Net.peer.on('open', pid => { State.localId = pid; resolve(pid); });
-            Net.peer.on('error', err => { UI.toast(`Net Error: ${err.type}`, 'warning'); console.error(err); reject(err); });
+    initialize: () => {
+        const stored = localStorage.getItem('kb_profile_v2');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                DataStore.profile = { ...DataStore.profile, ...parsed };
+            } catch (e) { console.warn("Profile data corruption detected. Using defaults."); }
+        }
+        DataStore.commit();
+    },
+    
+    commit: () => {
+        localStorage.setItem('kb_profile_v2', JSON.stringify(DataStore.profile));
+    },
+    
+    transactFunds: (amount) => {
+        DataStore.profile.funds += amount;
+        DataStore.commit();
+        InterfaceController.updateHUD();
+    }
+};
+
+/* ==========================================================================
+   USER INTERFACE CONTROLLER
+   ========================================================================== */
+const InterfaceController = {
+    activeView: 'view-init',
+    
+    pushNotification: (message, severity = 'info') => {
+        const bus = document.getElementById('notification-bus');
+        const toast = document.createElement('div');
+        let sevClass = '';
+        if (severity === 'success') sevClass = 't-success';
+        if (severity === 'warn') sevClass = 't-warn';
+        if (severity === 'error') sevClass = 't-err';
+        
+        toast.className = `sys-toast ${sevClass}`;
+        toast.innerText = message;
+        bus.appendChild(toast);
+        setTimeout(() => { if (toast.parentNode) toast.remove(); }, 4000);
+    },
+    
+    navigate: (viewId) => {
+        document.querySelectorAll('.ui-view').forEach(v => v.classList.remove('is-active'));
+        if (viewId) {
+            document.getElementById(viewId).classList.add('is-active');
+            InterfaceController.activeView = viewId;
+        } else {
+            InterfaceController.activeView = null;
+        }
+        if (viewId === 'view-garage') GarageController.renderView();
+    },
+    
+    refreshStagingArea: () => {
+        const list = document.getElementById('entity-list');
+        list.innerHTML = '';
+        
+        const entities = Object.values(AppState.entityRegistry);
+        document.getElementById('entity-count').innerText = entities.length;
+        
+        entities.forEach(ent => {
+            const node = document.createElement('li');
+            node.style.padding = '15px';
+            node.style.marginBottom = '10px';
+            node.style.background = 'rgba(255,255,255,0.05)';
+            node.style.borderRadius = '6px';
+            node.style.display = 'flex';
+            node.style.justifyContent = 'space-between';
+            node.style.alignItems = 'center';
+            node.style.borderLeft = `6px solid ${ent.pigment}`;
+            
+            const isLocal = ent.id === AppState.localIdentifier;
+            const roleBadge = ent.role === 'HOST' ? '<span style="color:var(--ui-accent); font-size:0.8rem; margin-left:10px;">[HOST_NODE]</span>' : '';
+            
+            node.innerHTML = `
+                <div style="display:flex; align-items:center;">
+                    <div style="width:20px; height:20px; border-radius:50%; background:${ent.pigment}; margin-right:15px; box-shadow: 0 0 10px ${ent.pigment};"></div>
+                    <strong style="font-family:var(--font-mono); font-size:1.2rem;">${isLocal ? 'LOCAL_ENTITY' : 'NODE_' + ent.id.substring(0,5)}</strong>
+                    ${roleBadge}
+                </div>
+                <div style="color:var(--ui-text-muted); font-family:var(--font-mono);">
+                    S:${ent.stats.spd} A:${ent.stats.acc} H:${ent.stats.hnd}
+                </div>
+            `;
+            list.appendChild(node);
+        });
+
+        if (AppState.networkRole === 'HOST') {
+            document.getElementById('cmd-deploy').style.display = 'block';
+            document.getElementById('cmd-standby').style.display = 'none';
+        } else {
+            document.getElementById('cmd-deploy').style.display = 'none';
+            document.getElementById('cmd-standby').style.display = 'block';
+        }
+    },
+    
+    updateHUD: () => {
+        if (AppState.engineStatus !== 'ACTIVE') return;
+        
+        document.getElementById('widget-currency').innerText = `$${DataStore.profile.funds}`;
+        
+        if (EnvironmentCore.localController) {
+            const kart = EnvironmentCore.localController;
+            const velocityKmh = Math.abs(Math.round(kart.physicsData.velocity.length() * 45));
+            document.getElementById('telemetry-speed').innerHTML = `${velocityKmh.toString().padStart(3, '0')}<span>KM/H</span>`;
+            
+            const itemMap = { 0: '?', 1: '🚀', 2: '💣', 3: '⚡' };
+            document.getElementById('inventory-icon').innerText = itemMap[kart.state.activeItem] || '✖';
+        }
+
+        const standingsDOM = document.getElementById('telemetry-standings');
+        standingsDOM.innerHTML = '';
+        const sortedEntities = Object.values(AppState.entityRegistry).sort((a,b) => b.score - a.score);
+        
+        sortedEntities.forEach((ent, idx) => {
+            const li = document.createElement('li');
+            li.style.color = ent.id === AppState.localIdentifier ? 'var(--ui-accent)' : '#fff';
+            li.innerHTML = `
+                <span>${idx + 1}. ${ent.id.substring(0,5)}</span>
+                <span>${ent.score} PTS</span>
+            `;
+            standingsDOM.appendChild(li);
         });
     },
+    
+    triggerVisualDamage: () => {
+        const overlay = document.getElementById('vfx-damage');
+        overlay.style.opacity = '1';
+        setTimeout(() => { overlay.style.opacity = '0'; }, 250);
+    }
+};
 
-    hostGame: async () => {
-        UI.nav('screen-loading');
-        document.getElementById('loading-text').innerText = "CREATING LOBBY...";
-        try {
-            await Net.initPeer();
-            State.isHost = true;
-            State.players[State.localId] = { id: State.localId, isHost: true, stats: Save.data, color: Save.data.color, score: 0 };
+/* ==========================================================================
+   GARAGE & UPGRADE LOGIC
+   ========================================================================== */
+const GarageController = {
+    costMultiplier: 250,
+    
+    renderView: () => {
+        document.getElementById('garage-funds-disp').innerText = DataStore.profile.funds;
+        
+        ['spd', 'acc', 'hnd'].forEach(statKey => {
+            const currentTier = DataStore.profile.stats[statKey];
+            document.getElementById(`tier-${statKey}`).innerText = currentTier;
             
-            Net.peer.on('connection', conn => {
-                if(Object.keys(State.players).length >= State.maxPlayers || State.inGame) {
-                    conn.send({ type: 'reject', msg: 'Lobby full or game started' });
-                    setTimeout(()=>conn.close(), 500); return;
+            const costDisp = document.getElementById(`cost-${statKey}`);
+            const btn = costDisp.parentElement;
+            
+            if (currentTier >= 10) {
+                costDisp.innerText = 'MAX';
+                btn.disabled = true;
+                btn.classList.remove('variant-success');
+                btn.classList.add('variant-alt');
+            } else {
+                costDisp.innerText = currentTier * GarageController.costMultiplier;
+                btn.disabled = false;
+                btn.classList.add('variant-success');
+                btn.classList.remove('variant-alt');
+            }
+        });
+        
+        const paletteContainer = document.getElementById('pigment-selector');
+        paletteContainer.innerHTML = '';
+        DataStore.palette.forEach(colorHex => {
+            const swatch = document.createElement('div');
+            swatch.style.width = '50px';
+            swatch.style.height = '50px';
+            swatch.style.borderRadius = '50%';
+            swatch.style.backgroundColor = colorHex;
+            swatch.style.cursor = 'pointer';
+            swatch.style.border = '3px solid #334';
+            swatch.style.transition = 'all 0.2s';
+            
+            if (DataStore.profile.pigment === colorHex) {
+                swatch.style.borderColor = '#fff';
+                swatch.style.transform = 'scale(1.15)';
+                swatch.style.boxShadow = `0 0 20px ${colorHex}`;
+            }
+            
+            swatch.onclick = () => {
+                DataStore.profile.pigment = colorHex;
+                DataStore.commit();
+                GarageController.renderView();
+            };
+            
+            paletteContainer.appendChild(swatch);
+        });
+    },
+    
+    processUpgrade: (statKey) => {
+        const currentTier = DataStore.profile.stats[statKey];
+        if (currentTier >= 10) return;
+        
+        const cost = currentTier * GarageController.costMultiplier;
+        if (DataStore.profile.funds >= cost) {
+            DataStore.profile.funds -= cost;
+            DataStore.profile.stats[statKey]++;
+            DataStore.commit();
+            GarageController.renderView();
+            InterfaceController.pushNotification(`SYSTEM UPGRADE: ${statKey.toUpperCase()} OPTIMIZED`, 'success');
+        } else {
+            InterfaceController.pushNotification('INSUFFICIENT FUNDS FOR UPGRADE', 'error');
+        }
+    }
+};
+
+/* ==========================================================================
+   INPUT SUBSYSTEM
+   ========================================================================== */
+const InputManager = {
+    state: { accelerate: 0, brake: 0, steerLeft: 0, steerRight: 0, deployItem: 0 },
+    
+    initialize: () => {
+        window.addEventListener('keydown', InputManager.handleKey(1));
+        window.addEventListener('keyup', InputManager.handleKey(0));
+    },
+    
+    handleKey: (val) => (e) => {
+        if (AppState.engineStatus !== 'ACTIVE') return;
+        switch(e.code) {
+            case 'KeyW': case 'ArrowUp': InputManager.state.accelerate = val; break;
+            case 'KeyS': case 'ArrowDown': InputManager.state.brake = val; break;
+            case 'KeyA': case 'ArrowLeft': InputManager.state.steerLeft = val; break;
+            case 'KeyD': case 'ArrowRight': InputManager.state.steerRight = val; break;
+            case 'Space': InputManager.state.deployItem = val; break;
+        }
+    },
+    
+    serialize: () => ({
+        w: InputManager.state.accelerate,
+        s: InputManager.state.brake,
+        a: InputManager.state.steerLeft,
+        d: InputManager.state.steerRight,
+        sp: InputManager.state.deployItem
+    })
+};
+
+/* ==========================================================================
+   NETWORK TRANSPORT LAYER (PEERJS WEBRTC)
+   ========================================================================== */
+const NetworkController = {
+    peerInstance: null,
+    hostConnection: null,
+    clientConnections: {}, // Used by HOST to track CLIENTS
+    
+    establishPeer: () => {
+        return new Promise((resolve, reject) => {
+            const uuid = MathUtils.generateHash(6);
+            NetworkController.peerInstance = new Peer(uuid, {
+                config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] }
+            });
+            
+            NetworkController.peerInstance.on('open', id => {
+                AppState.localIdentifier = id;
+                resolve(id);
+            });
+            
+            NetworkController.peerInstance.on('error', err => {
+                InterfaceController.pushNotification(`TRANSPORT ERROR: ${err.type}`, 'error');
+                reject(err);
+            });
+        });
+    },
+    
+    initializeHost: async () => {
+        InterfaceController.pushNotification('ALLOCATING HOST RESOURCES...', 'info');
+        try {
+            await NetworkController.establishPeer();
+            AppState.networkRole = 'HOST';
+            AppState.engineStatus = 'STAGING';
+            
+            AppState.entityRegistry[AppState.localIdentifier] = {
+                id: AppState.localIdentifier,
+                role: 'HOST',
+                stats: DataStore.profile.stats,
+                pigment: DataStore.profile.pigment,
+                score: 0
+            };
+            
+            NetworkController.peerInstance.on('connection', conn => {
+                if(Object.keys(AppState.entityRegistry).length >= AppState.maximumEntities || AppState.engineStatus === 'ACTIVE') {
+                    conn.send({ op: 'REJECT', reason: 'CAPACITY EXCEEDED OR ARENA ACTIVE' });
+                    setTimeout(() => conn.close(), 1000);
+                    return;
                 }
                 
-                conn.on('data', data => Net.handleClientMsg(conn.peer, data));
-                conn.on('close', () => Net.removeClient(conn.peer));
-                Net.clients[conn.peer] = conn;
+                NetworkController.clientConnections[conn.peer] = conn;
+                
+                conn.on('data', payload => NetworkController.processClientPayload(conn.peer, payload));
+                conn.on('close', () => NetworkController.purgeClient(conn.peer));
             });
             
-            document.getElementById('lobby-code-display').innerText = State.localId;
-            UI.nav('screen-lobby');
-            UI.updateLobby();
-            UI.toast('Lobby Created!', 'success');
-        } catch(e) { UI.nav('screen-main'); }
+            document.getElementById('hash-display').innerText = AppState.localIdentifier;
+            InterfaceController.navigate('view-staging');
+            InterfaceController.refreshStagingArea();
+            InterfaceController.pushNotification('HOST UPLINK ESTABLISHED', 'success');
+            
+        } catch (e) {
+            InterfaceController.navigate('view-root');
+        }
     },
-
-    joinGame: async () => {
-        const code = document.getElementById('join-code-input').value.toUpperCase();
-        if(code.length !== 5) return UI.toast('Invalid Code length');
-        UI.nav('screen-loading');
-        document.getElementById('loading-text').innerText = "CONNECTING...";
+    
+    initializeClient: async () => {
+        const targetHash = document.getElementById('uplink-code').value.toUpperCase();
+        if (targetHash.length !== 6) return InterfaceController.pushNotification('INVALID HASH LENGTH', 'warn');
+        
+        InterfaceController.pushNotification('ATTEMPTING UPLINK...', 'info');
         
         try {
-            await Net.initPeer();
-            State.isHost = false;
-            Net.hostConn = Net.peer.connect(code, { reliable: true });
+            await NetworkController.establishPeer();
+            AppState.networkRole = 'CLIENT';
             
-            Net.hostConn.on('open', () => {
-                Net.hostConn.send({ type: 'join', data: { id: State.localId, stats: Save.data, color: Save.data.color, score: 0 } });
+            NetworkController.hostConnection = NetworkController.peerInstance.connect(targetHash, { reliable: true });
+            
+            NetworkController.hostConnection.on('open', () => {
+                AppState.engineStatus = 'STAGING';
+                NetworkController.hostConnection.send({
+                    op: 'JOIN_REQUEST',
+                    payload: {
+                        id: AppState.localIdentifier,
+                        role: 'CLIENT',
+                        stats: DataStore.profile.stats,
+                        pigment: DataStore.profile.pigment,
+                        score: 0
+                    }
+                });
             });
             
-            Net.hostConn.on('data', Net.handleHostMsg);
-            Net.hostConn.on('close', Net.disconnect);
-        } catch(e) { UI.nav('screen-main'); }
+            NetworkController.hostConnection.on('data', NetworkController.processHostPayload);
+            NetworkController.hostConnection.on('close', NetworkController.terminateUplink);
+            
+        } catch (e) {
+            InterfaceController.navigate('view-root');
+        }
+    },
+    
+    terminateUplink: () => {
+        if (NetworkController.peerInstance) NetworkController.peerInstance.destroy();
+        NetworkController.peerInstance = null;
+        NetworkController.hostConnection = null;
+        NetworkController.clientConnections = {};
+        
+        AppState.entityRegistry = {};
+        AppState.networkRole = 'NONE';
+        
+        if (AppState.engineStatus === 'ACTIVE') {
+            EngineCore.terminateArena();
+        }
+        
+        AppState.engineStatus = 'IDLE';
+        InterfaceController.navigate('view-root');
+        InterfaceController.pushNotification('UPLINK SEVERED', 'warn');
     },
 
-    disconnect: () => {
-        if(Net.peer) Net.peer.destroy();
-        Net.peer = null; Net.hostConn = null; Net.clients = {}; State.players = {};
-        if(State.inGame) Engine.stop();
-        UI.nav('screen-main');
-        UI.toast('Disconnected');
+    transmitAll: (payload) => {
+        Object.values(NetworkController.clientConnections).forEach(conn => {
+            if (conn.open) conn.send(payload);
+        });
+    },
+    
+    transmitInput: () => {
+        if (AppState.networkRole === 'CLIENT' && NetworkController.hostConnection && NetworkController.hostConnection.open) {
+            NetworkController.hostConnection.send({
+                op: 'CLIENT_INPUT',
+                payload: InputManager.serialize()
+            });
+        }
     },
 
-    startGame: () => {
-        if(!State.isHost) return;
-        const seed = Math.random();
-        Net.broadcast({ type: 'start', seed: seed });
-        Engine.start(seed);
+    synchronizeStaging: () => {
+        NetworkController.transmitAll({
+            op: 'SYNC_STAGING',
+            payload: AppState.entityRegistry
+        });
+    },
+    
+    synchronizeArenaState: () => {
+        if (AppState.engineStatus !== 'ACTIVE' || AppState.networkRole !== 'HOST') return;
+        
+        const snapshot = {
+            kinematics: {},
+            entities: {},
+            environment: {
+                pickups: EnvironmentCore.itemSubsystem.getStates(),
+                hazards: EnvironmentCore.hazardSubsystem.getStates()
+            }
+        };
+        
+        for (let uid in EnvironmentCore.actors) {
+            const actor = EnvironmentCore.actors[uid];
+            snapshot.kinematics[uid] = {
+                p: actor.meshGroup.position.toArray(),
+                q: actor.meshGroup.quaternion.toArray(),
+                v: actor.physicsData.velocity.toArray(),
+                a: actor.physicsData.angularVelocity
+            };
+            snapshot.entities[uid] = AppState.entityRegistry[uid].score;
+        }
+        
+        NetworkController.transmitAll({ op: 'SYNC_ARENA', payload: snapshot });
     },
 
-    // Host handlers
-    handleClientMsg: (pid, msg) => {
-        if(msg.type === 'join') {
-            State.players[pid] = msg.data;
-            Net.broadcastLobby();
-            UI.updateLobby();
-        } else if (msg.type === 'input' && State.inGame && Engine.karts[pid]) {
-            Engine.karts[pid].netInput = msg.data;
+    processClientPayload: (clientUuid, message) => {
+        switch (message.op) {
+            case 'JOIN_REQUEST':
+                AppState.entityRegistry[clientUuid] = message.payload;
+                NetworkController.synchronizeStaging();
+                InterfaceController.refreshStagingArea();
+                break;
+            case 'CLIENT_INPUT':
+                if (AppState.engineStatus === 'ACTIVE' && EnvironmentCore.actors[clientUuid]) {
+                    EnvironmentCore.actors[clientUuid].applyNetworkInput(message.payload);
+                }
+                break;
         }
     },
-    removeClient: (pid) => {
-        delete Net.clients[pid];
-        delete State.players[pid];
-        if(State.inGame && Engine.karts[pid]) {
-            Engine.scene.remove(Engine.karts[pid].mesh);
-            delete Engine.karts[pid];
+    
+    processHostPayload: (message) => {
+        switch (message.op) {
+            case 'REJECT':
+                InterfaceController.pushNotification(`UPLINK DENIED: ${message.reason}`, 'error');
+                NetworkController.terminateUplink();
+                break;
+            case 'SYNC_STAGING':
+                AppState.entityRegistry = message.payload;
+                document.getElementById('hash-display').innerText = NetworkController.hostConnection.peer;
+                InterfaceController.navigate('view-staging');
+                InterfaceController.refreshStagingArea();
+                break;
+            case 'DEPLOY_CMD':
+                EngineCore.initializeGraphics(message.payload.seed);
+                break;
+            case 'SYNC_ARENA':
+                EngineCore.applyInterpolationSnapshot(message.payload);
+                break;
+            case 'ARENA_EVENT':
+                EngineCore.processNetworkEvent(message.payload);
+                break;
         }
-        Net.broadcastLobby();
-        UI.updateLobby();
     },
-    broadcast: (msg) => { Object.values(Net.clients).forEach(c => c.send(msg)); },
-    broadcastLobby: () => Net.broadcast({ type: 'lobby_sync', players: State.players }),
-    broadcastGame: () => {
-        if(!State.inGame) return;
-        const snap = { k: {}, p: Engine.items.getState(), w: Engine.weapons.getState(), s: {} };
-        for(let id in Engine.karts) {
-            const k = Engine.karts[id];
-            snap.k[id] = { p: k.mesh.position.toArray(), r: k.mesh.rotation.toArray(), v: k.velocity.toArray() };
-            snap.s[id] = State.players[id].score;
+    
+    purgeClient: (clientUuid) => {
+        delete NetworkController.clientConnections[clientUuid];
+        delete AppState.entityRegistry[clientUuid];
+        
+        if (AppState.engineStatus === 'ACTIVE' && EnvironmentCore.actors[clientUuid]) {
+            EnvironmentCore.sceneGraph.remove(EnvironmentCore.actors[clientUuid].meshGroup);
+            delete EnvironmentCore.actors[clientUuid];
         }
-        Net.broadcast({ type: 'game_sync', snap: snap });
-    },
-
-    // Client handlers
-    handleHostMsg: (msg) => {
-        if(msg.type === 'reject') { UI.toast(msg.msg, 'warning'); Net.disconnect(); }
-        else if (msg.type === 'lobby_sync') { 
-            State.players = msg.players; 
-            document.getElementById('lobby-code-display').innerText = Net.hostConn.peer;
-            UI.nav('screen-lobby'); UI.updateLobby(); 
-        }
-        else if (msg.type === 'start') { Engine.start(msg.seed); }
-        else if (msg.type === 'game_sync') { Engine.applySnapshot(msg.snap); }
-        else if (msg.type === 'event') { Engine.handleNetEvent(msg.evt); }
-    },
-    sendInput: () => {
-        if(!State.isHost && Net.hostConn && State.inGame) {
-            Net.hostConn.send({ type: 'input', data: Input.getState() });
-        }
+        
+        NetworkController.synchronizeStaging();
+        InterfaceController.refreshStagingArea();
     }
 };
+
+/* ==========================================================================
+   ADVANCED THREE.JS ENGINE CORE & PROCEDURAL ENVIRONMENT
+   ========================================================================== */
 
 /**
- * 3D ENGINE & PHYSICS
+ * Procedural Environment Subsystem - Generates "Smash Island" topography
  */
-class Kart {
-    constructor(pid, data, isLocal, startPos) {
-        this.pid = pid; this.isLocal = isLocal; this.data = data;
-        this.velocity = new THREE.Vector3(); this.angularVel = 0;
+class TerrainGenerator {
+    constructor(scene, rngSeed) {
+        this.scene = scene;
+        this.simplex = new SimplexNoise(rngSeed.toString());
+        this.islandRadius = 350;
+        this.collisionMeshes = [];
+        this.buildTopography();
+        this.buildOcean();
+        this.buildSkyDome();
+        this.buildFlora();
+        this.buildInfrastructure();
+    }
+
+    buildTopography() {
+        // High fidelity geometry for detailed terrain deformation
+        const geoSegments = 256;
+        const terrainGeo = new THREE.PlaneGeometry(this.islandRadius * 2.5, this.islandRadius * 2.5, geoSegments, geoSegments);
+        terrainGeo.rotateX(-Math.PI / 2);
+
+        const positions = terrainGeo.attributes.position.array;
+        const uvs = terrainGeo.attributes.uv.array;
         
-        // Stats mapping
-        const spdLvl = data.stats.speed; const accLvl = data.stats.accel; const handLvl = data.stats.hand;
-        this.maxSpeed = 1.5 + (spdLvl * 0.1);
-        this.accel = 0.05 + (accLvl * 0.005);
-        this.turnSpeed = 0.04 + (handLvl * 0.003);
-        this.friction = 0.96;
-        
-        this.item = 0; // 0: none, 1: missile, 2: mine, 3: boost
-        this.cooldown = 0;
-        this.hp = 100;
-        this.invuln = 0;
+        // Multi-layered texturing via vertex colors
+        const colors = [];
+        const colorAttr = new THREE.BufferAttribute(new Float32Array(positions.length), 3);
 
-        this.netInput = { u:0, d:0, l:0, r:0, a:0 };
+        const colSand = new THREE.Color(0xe8d59b);
+        const colGrass = new THREE.Color(0x4ca64c);
+        const colRock = new THREE.Color(0x666666);
+        const colDirt = new THREE.Color(0x8b5a2b);
 
-        // Visuals
-        this.mesh = new THREE.Group();
-        this.mesh.position.copy(startPos);
-        
-        // Body
-        const bodyGeo = new THREE.BoxGeometry(2, 0.8, 3.5);
-        const bodyMat = new THREE.MeshPhongMaterial({color: data.color, shininess: 100});
-        const body = new THREE.Mesh(bodyGeo, bodyMat);
-        body.position.y = 0.6; body.castShadow = true;
-        this.mesh.add(body);
+        // Procedural heightmap generation using fractal noise
+        for (let i = 0; i < positions.length; i += 3) {
+            const vx = positions[i];
+            const vz = positions[i + 2];
+            const distFromCenter = Math.sqrt(vx * vx + vz * vz);
+            
+            // Base island shape (radial gradient falloff)
+            let falloff = Math.max(0, 1 - Math.pow(distFromCenter / this.islandRadius, 2));
+            
+            // Fractal noise for organic variation
+            let elevation = this.simplex.noise2D(vx * 0.005, vz * 0.005) * 20;
+            elevation += this.simplex.noise2D(vx * 0.02, vz * 0.02) * 5;
+            
+            // Create terraced grassy plateaus (Smash Island aesthetic)
+            let finalY = (elevation + 10) * falloff;
+            if (finalY > 15 && finalY < 25) finalY = 20; // Plateau 1
+            if (finalY > 35) finalY = 40; // Plateau 2
+            
+            // Coastal drop off
+            if (distFromCenter > this.islandRadius * 0.85) {
+                finalY -= Math.pow((distFromCenter - this.islandRadius * 0.85) * 0.5, 2);
+            }
 
-        // Cockpit
-        const cockpit = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 1.5), new THREE.MeshPhongMaterial({color: 0x111111}));
-        cockpit.position.set(0, 1.2, -0.2);
-        this.mesh.add(cockpit);
+            // Track shaping (carving paths through the terrain)
+            // Procedural curving track path
+            const trackDist1 = Math.abs(Math.sin(vx * 0.01) * 50 + vz);
+            const trackDist2 = Math.abs(Math.cos(vz * 0.01) * 50 + vx);
+            const trackDist = Math.min(trackDist1, trackDist2);
+            
+            let isTrack = false;
+            if (trackDist < 30 && distFromCenter < this.islandRadius * 0.8) {
+                finalY = MathUtils.lerp(finalY, 5, 0.8); // Flatten track area
+                isTrack = true;
+            }
 
-        // Wheels
-        const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.5, 16); wheelGeo.rotateZ(Math.PI/2);
-        const wheelMat = new THREE.MeshPhongMaterial({color: 0x222222});
-        const pos = [[1.2, 0.6, 1.2], [-1.2, 0.6, 1.2], [1.2, 0.6, -1.2], [-1.2, 0.6, -1.2]];
-        this.wheels = pos.map(p => {
-            const w = new THREE.Mesh(wheelGeo, wheelMat);
-            w.position.set(...p); w.castShadow = true;
-            this.mesh.add(w); return w;
+            positions[i + 1] = finalY;
+
+            // Vertex coloring logic based on elevation and track data
+            const vColor = new THREE.Color();
+            if (finalY < 2) {
+                vColor.copy(colSand);
+            } else if (isTrack) {
+                vColor.copy(colDirt);
+            } else if (finalY > 30) {
+                vColor.copy(colRock);
+            } else {
+                vColor.copy(colGrass);
+                // Mix variation into grass
+                const noiseC = this.simplex.noise2D(vx * 0.1, vz * 0.1);
+                vColor.offsetHSL(0, 0, noiseC * 0.05);
+            }
+            
+            colors.push(vColor.r, vColor.g, vColor.b);
+        }
+
+        terrainGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        terrainGeo.computeVertexNormals();
+
+        // Custom Shader Material for advanced terrain blending
+        const terrainMat = new THREE.MeshStandardMaterial({
+            vertexColors: true,
+            roughness: 0.9,
+            metalness: 0.0,
+            flatShading: true // Stylized look
         });
 
-        // Name tag
-        const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 64;
-        const ctx = canvas.getContext('2d'); ctx.fillStyle = 'white'; ctx.font = '30px Arial'; ctx.textAlign = 'center'; ctx.fillText(pid.substring(0,5), 128, 40);
-        const tex = new THREE.CanvasTexture(canvas);
-        const spriteMat = new THREE.SpriteMaterial({ map: tex });
-        this.nameTag = new THREE.Sprite(spriteMat);
-        this.nameTag.position.set(0, 3, 0); this.nameTag.scale.set(4, 1, 1);
-        this.mesh.add(this.nameTag);
-
-        Engine.scene.add(this.mesh);
-    }
-
-    update() {
-        if(this.invuln > 0) this.invuln--;
-        if(this.cooldown > 0) this.cooldown--;
-
-        // Blinking if invuln
-        this.mesh.visible = (this.invuln % 10 < 5);
-
-        const inp = this.isLocal ? Input.getState() : this.netInput;
+        this.terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+        this.terrainMesh.receiveShadow = true;
+        this.scene.add(this.terrainMesh);
+        this.collisionMeshes.push(this.terrainMesh);
         
-        // Action
-        if(inp.a && this.cooldown <= 0 && this.item !== 0) {
-            Engine.useItem(this);
-            this.cooldown = 30;
-        }
-
-        // Turning
-        const speedRatio = this.velocity.length() / this.maxSpeed;
-        if(speedRatio > 0.1) {
-            let turn = 0;
-            if(inp.l) turn = this.turnSpeed;
-            if(inp.r) turn = -this.turnSpeed;
-            if(inp.d) turn *= -1; // reverse turn
-            this.mesh.rotation.y += turn;
-        }
-
-        // Acceleration
-        const dir = new THREE.Vector3(0,0,1).applyQuaternion(this.mesh.quaternion);
-        let acc = 0;
-        if(inp.u) acc = this.accel;
-        if(inp.d) acc = -this.accel * 0.5;
-        
-        dir.multiplyScalar(acc);
-        this.velocity.add(dir);
-        this.velocity.multiplyScalar(this.friction);
-
-        // Limits
-        if(this.velocity.length() > this.maxSpeed && this.item !== 3) {
-            this.velocity.normalize().multiplyScalar(this.maxSpeed);
-        }
-
-        // Apply velocity
-        this.mesh.position.add(this.velocity);
-
-        // Wheel animation
-        this.wheels.forEach(w => w.rotation.x += this.velocity.length() * 0.2);
-
-        // Very basic track boundaries (circle arena 150 radius)
-        const dist = Math.sqrt(this.mesh.position.x**2 + this.mesh.position.z**2);
-        if(dist > 140) {
-            const normal = new THREE.Vector3(this.mesh.position.x, 0, this.mesh.position.z).normalize();
-            this.mesh.position.copy(normal.multiplyScalar(140));
-            this.velocity.reflect(normal).multiplyScalar(0.5); // bounce
-        }
-
-        // Items logic (Host only)
-        if(State.isHost) {
-            Engine.items.checkCollision(this);
-            Engine.weapons.checkCollision(this);
-        }
+        // Central Lava Pit
+        const lavaGeo = new THREE.PlaneGeometry(80, 80, 32, 32);
+        lavaGeo.rotateX(-Math.PI/2);
+        const lavaMat = new THREE.MeshBasicMaterial({color: 0xff3300});
+        this.lavaMesh = new THREE.Mesh(lavaGeo, lavaMat);
+        this.lavaMesh.position.set(0, 4, 0); // Sunken in center
+        this.scene.add(this.lavaMesh);
     }
 
-    hit() {
-        if(this.invuln > 0) return;
-        this.velocity.multiplyScalar(0.1);
-        this.velocity.y = 1.5; // pop up
-        this.invuln = 60;
-        this.item = 0;
-        if(this.isLocal) { UI.damageEffect(); AudioSys.play('hit'); }
-        // Drop money
-        State.players[this.pid].score = Math.max(0, State.players[this.pid].score - 10);
-    }
-}
+    buildOcean() {
+        // High fidelity custom water shader program
+        const waterGeo = new THREE.PlaneGeometry(2000, 2000, 128, 128);
+        waterGeo.rotateX(-Math.PI / 2);
 
-class ItemManager {
-    constructor() {
-        this.boxes = [];
-        const geo = new THREE.BoxGeometry(2,2,2);
-        const canvas = document.createElement('canvas'); canvas.width=128; canvas.height=128;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle='#ff00ff'; ctx.fillRect(0,0,128,128); ctx.fillStyle='#00ffff'; ctx.font='80px Arial'; ctx.fillText('?',30,95);
-        const mat = new THREE.MeshPhongMaterial({map: new THREE.CanvasTexture(canvas), emissive: 0x330033});
-        
-        if(State.isHost) {
-            for(let i=0; i<15; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const r = Utils.rand(20, 130);
-                this.spawn(i, Math.cos(angle)*r, Math.sin(angle)*r, geo, mat);
-            }
-        }
-    }
-    spawn(id, x, z, geo, mat) {
-        const m = new THREE.Mesh(geo, mat); m.position.set(x, 1.5, z); m.castShadow = true;
-        Engine.scene.add(m);
-        this.boxes.push({ id, mesh: m, active: true, timer: 0 });
-    }
-    update() {
-        const t = Date.now() * 0.002;
-        this.boxes.forEach(b => {
-            if(b.active) { b.mesh.rotation.y += 0.02; b.mesh.rotation.x = Math.sin(t+b.id)*0.2; }
-            else if(State.isHost) {
-                b.timer--;
-                if(b.timer <= 0) b.active = true;
-            }
-            b.mesh.visible = b.active;
-        });
-    }
-    checkCollision(kart) {
-        this.boxes.forEach(b => {
-            if(b.active && kart.mesh.position.distanceTo(b.mesh.position) < 3.5) {
-                b.active = false; b.timer = 300;
-                const itemType = Math.floor(Utils.rand(1, 4)); // 1:missile, 2:mine, 3:boost
-                kart.item = itemType;
-                State.players[kart.pid].score += 5; // Reward for getting box
+        this.waterUniforms = {
+            uTime: { value: 0.0 },
+            uBaseColor: { value: new THREE.Color(0x0088ff) },
+            uCrestColor: { value: new THREE.Color(0x00ffff) }
+        };
+
+        const waterVert = `
+            uniform float uTime;
+            varying vec2 vUv;
+            varying float vElevation;
+            
+            void main() {
+                vUv = uv;
+                vec4 modelPosition = modelMatrix * vec4(position, 1.0);
                 
-                // Event sync
-                Net.broadcast({type:'event', evt:{action:'pickup', pid:kart.pid, item:itemType}});
-                if(kart.isLocal) Engine.handleNetEvent({action:'pickup', pid:kart.pid, item:itemType});
+                // Complex wave displacement
+                float elevation = sin(modelPosition.x * 0.02 + uTime) * cos(modelPosition.z * 0.02 + uTime) * 2.0;
+                elevation += sin(modelPosition.x * 0.05 - uTime * 1.5) * 0.5;
+                
+                modelPosition.y += elevation;
+                vElevation = elevation;
+                
+                gl_Position = projectionMatrix * viewMatrix * modelPosition;
+            }
+        `;
+
+        const waterFrag = `
+            uniform vec3 uBaseColor;
+            uniform vec3 uCrestColor;
+            varying float vElevation;
+            
+            void main() {
+                float mixStrength = (vElevation + 2.5) / 5.0;
+                vec3 finalColor = mix(uBaseColor, uCrestColor, mixStrength);
+                gl_FragColor = vec4(finalColor, 0.85); // Semi-transparent
+            }
+        `;
+
+        const waterMat = new THREE.ShaderMaterial({
+            vertexShader: waterVert,
+            fragmentShader: waterFrag,
+            uniforms: this.waterUniforms,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+
+        this.waterMesh = new THREE.Mesh(waterGeo, waterMat);
+        this.waterMesh.position.y = 0; // Sea level
+        this.scene.add(this.waterMesh);
+    }
+
+    buildSkyDome() {
+        // Vibrant azure skybox with procedural gradient
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x4444ff, 0.6);
+        this.scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(200, 300, 100);
+        dirLight.castShadow = true;
+        
+        // Massive shadow map for high-fidelity rendering
+        dirLight.shadow.mapSize.width = 4096;
+        dirLight.shadow.mapSize.height = 4096;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 1000;
+        const d = 400;
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+        dirLight.shadow.bias = -0.0005;
+        this.scene.add(dirLight);
+
+        // Sky dome visual
+        const skyGeo = new THREE.SphereGeometry(900, 32, 15);
+        const skyMat = new THREE.MeshBasicMaterial({ color: 0x55ccff, side: THREE.BackSide });
+        const skyDome = new THREE.Mesh(skyGeo, skyMat);
+        this.scene.add(skyDome);
+    }
+
+    buildFlora() {
+        // Procedurally generating Palm Trees
+        const trunkGeo = new THREE.CylinderGeometry(1.5, 2.5, 15, 8);
+        const trunkMat = new THREE.MeshStandardMaterial({color: 0x6b4226, roughness: 1.0});
+        
+        const leafGeo = new THREE.PlaneGeometry(6, 15, 4, 4);
+        leafGeo.translate(0, 7.5, 0); // Offset origin to base
+        leafGeo.rotateX(-Math.PI/4); // Bend outwards
+        const leafMat = new THREE.MeshStandardMaterial({color: 0x228b22, side: THREE.DoubleSide});
+
+        for(let i=0; i<80; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = MathUtils.randomRange(60, this.islandRadius * 0.9);
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            
+            // Raycast down to find terrain height for exact placement
+            const height = this.getTerrainHeightAt(x, z);
+            if (height < 2 || height > 28) continue; // Don't spawn in water or steep peaks
+
+            const treeGroup = new THREE.Group();
+            
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 7.5;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+
+            // Generate leaves radially
+            for(let j=0; j<6; j++) {
+                const leaf = new THREE.Mesh(leafGeo, leafMat);
+                leaf.position.y = 14;
+                leaf.rotation.y = (j / 6) * Math.PI * 2;
+                leaf.castShadow = true;
+                treeGroup.add(leaf);
+            }
+
+            treeGroup.position.set(x, height, z);
+            
+            // Collision cylinder for physics
+            treeGroup.userData.collisionRadius = 2.5;
+            this.scene.add(treeGroup);
+            this.collisionMeshes.push({ type: 'cylinder', pos: new THREE.Vector3(x, height, z), r: 2.5 });
+        }
+    }
+
+    buildInfrastructure() {
+        // Bumpers (Purple, Green, Blue from reference)
+        const bumperColors = [0x9900ff, 0x00ff00, 0x0000ff];
+        const bumperGeo = new THREE.BoxGeometry(40, 4, 2);
+        
+        for(let i=0; i<12; i++) {
+            const mat = new THREE.MeshStandardMaterial({ color: bumperColors[i % 3], metalness: 0.2, roughness: 0.3 });
+            const mesh = new THREE.Mesh(bumperGeo, mat);
+            
+            const angle = (i / 12) * Math.PI * 2;
+            const x = Math.cos(angle) * 120;
+            const z = Math.sin(angle) * 120;
+            const y = this.getTerrainHeightAt(x, z);
+            
+            mesh.position.set(x, y + 2, z);
+            mesh.lookAt(0, y+2, 0); // Face center
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            
+            this.scene.add(mesh);
+            
+            // Precise OBB collision data (Simplified to spheres for performance in this prototype)
+            this.collisionMeshes.push({ type: 'box_approx', pos: mesh.position.clone(), size: 20 });
+        }
+
+        // Jump Ramps
+        const rampGeo = new THREE.BufferGeometry();
+        // Define explicit vertices for a wedge ramp
+        const vertices = new Float32Array([
+            -10, 0, 10,   10, 0, 10,   -10, 0, -10,
+            10, 0, -10,   -10, 6, -10,  10, 6, -10
+        ]);
+        const indices = [
+            0,1,2, 1,3,2, // Bottom
+            0,4,1, 1,4,5, // Ramp face
+            0,2,4,        // Left side
+            1,5,3,        // Right side
+            2,3,4, 3,5,4  // Back
+        ];
+        rampGeo.setIndex(indices);
+        rampGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        rampGeo.computeVertexNormals();
+
+        const rampMat = new THREE.MeshStandardMaterial({color: 0xffffff, vertexColors: false});
+        // Paint red/white stripes procedurally
+        
+        for(let i=0; i<4; i++) {
+            const mesh = new THREE.Mesh(rampGeo, rampMat);
+            const rOffset = 80;
+            const pos = [
+                [0, rOffset], [0, -rOffset], [rOffset, 0], [-rOffset, 0]
+            ];
+            mesh.position.set(pos[i][0], this.getTerrainHeightAt(pos[i][0], pos[i][1]), pos[i][1]);
+            mesh.lookAt(0, mesh.position.y, 0);
+            mesh.castShadow = true;
+            this.scene.add(mesh);
+        }
+    }
+
+    getTerrainHeightAt(x, z) {
+        // Mathematical approximation aligned with mesh generation
+        const dist = Math.sqrt(x*x + z*z);
+        let falloff = Math.max(0, 1 - Math.pow(dist / this.islandRadius, 2));
+        let el = this.simplex.noise2D(x*0.005, z*0.005)*20 + this.simplex.noise2D(x*0.02, z*0.02)*5;
+        let finalY = (el + 10) * falloff;
+        
+        const td1 = Math.abs(Math.sin(x*0.01)*50 + z);
+        const td2 = Math.abs(Math.cos(z*0.01)*50 + x);
+        if(Math.min(td1, td2) < 30 && dist < this.islandRadius*0.8) {
+            finalY = MathUtils.lerp(finalY, 5, 0.8);
+        }
+        return finalY;
+    }
+
+    update(time) {
+        if(this.waterUniforms) this.waterUniforms.uTime.value = time * 2.0;
+        // Animate Lava Texture translation
+    }
+}
+
+/**
+ * Advanced Vehicle Physics Controller
+ */
+class KinematicActor {
+    constructor(uid, profile, isLocal, startNode) {
+        this.uid = uid;
+        this.isLocal = isLocal;
+        
+        // Statistical Mapping
+        const stats = profile.stats;
+        this.tuning = {
+            maxVel: 80 + (stats.spd * 5),
+            accelForce: 60 + (stats.acc * 4),
+            handling: 1.5 + (stats.hnd * 0.1),
+            frictionGround: 0.96,
+            frictionAir: 0.99,
+            gravity: -120,
+            jumpForce: 45
+        };
+
+        this.physicsData = {
+            velocity: new THREE.Vector3(),
+            angularVelocity: 0,
+            isGrounded: false,
+            surfaceNormal: new THREE.Vector3(0,1,0),
+            driftFactor: 0
+        };
+
+        this.state = {
+            hp: 100,
+            invulnTimer: 0,
+            activeItem: 0
+        };
+
+        this.buildRig(profile.pigment);
+        this.meshGroup.position.copy(startNode);
+        
+        // Raycaster for advanced ground detection and suspension
+        this.raycaster = new THREE.Raycaster();
+        this.raycaster.far = 5.0; // Suspension travel distance
+    }
+
+    buildRig(chassisColor) {
+        this.meshGroup = new THREE.Group();
+        
+        // Main Chassis Geometry (High detail composite)
+        const bodyGeo = new THREE.BoxGeometry(3.5, 1.2, 5.5);
+        const bodyMat = new THREE.MeshStandardMaterial({
+            color: chassisColor, 
+            roughness: 0.2, 
+            metalness: 0.8,
+            clearcoat: 1.0
+        });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 1.0;
+        body.castShadow = true;
+        
+        // Engine block
+        const engineGeo = new THREE.BoxGeometry(2, 1.5, 2);
+        const engineMat = new THREE.MeshStandardMaterial({color: 0x333333, metalness: 0.9});
+        const engine = new THREE.Mesh(engineGeo, engineMat);
+        engine.position.set(0, 1.8, -1.5);
+        engine.castShadow = true;
+
+        // Exhaust pipes
+        const pipeGeo = new THREE.CylinderGeometry(0.2, 0.2, 1);
+        pipeGeo.rotateX(Math.PI/2);
+        const p1 = new THREE.Mesh(pipeGeo, engineMat); p1.position.set(0.8, 1.5, -2.6);
+        const p2 = new THREE.Mesh(pipeGeo, engineMat); p2.position.set(-0.8, 1.5, -2.6);
+
+        this.meshGroup.add(body, engine, p1, p2);
+
+        // Tires
+        const wheelGeo = new THREE.CylinderGeometry(1.0, 1.0, 0.8, 24);
+        wheelGeo.rotateZ(Math.PI/2);
+        const wheelMat = new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.9});
+        
+        this.wheels = [];
+        const wOffsets = [
+            [2.2, 1.0, 2.0], [-2.2, 1.0, 2.0], // Front
+            [2.2, 1.0, -2.0], [-2.2, 1.0, -2.0] // Rear
+        ];
+        
+        wOffsets.forEach(pos => {
+            const w = new THREE.Mesh(wheelGeo, wheelMat);
+            w.position.set(...pos);
+            w.castShadow = true;
+            this.meshGroup.add(w);
+            this.wheels.push(w);
+        });
+
+        // Add to global scene graph
+        EnvironmentCore.sceneGraph.add(this.meshGroup);
+    }
+
+    applyNetworkInput(payload) {
+        this.remoteInput = payload;
+    }
+
+    tick(dt, terrainMesh) {
+        if (this.state.invulnTimer > 0) {
+            this.state.invulnTimer -= dt;
+            this.meshGroup.visible = Math.floor(this.state.invulnTimer * 10) % 2 === 0;
+        } else {
+            this.meshGroup.visible = true;
+        }
+
+        const input = this.isLocal ? InputManager.serialize() : (this.remoteInput || {w:0,s:0,a:0,d:0,sp:0});
+
+        // Complex Raycast Physics
+        // Cast a ray downwards from center of mass to detect terrain surface
+        this.raycaster.set(this.meshGroup.position.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0));
+        const intersects = this.raycaster.intersectObject(terrainMesh);
+
+        let groundHeight = -100;
+        this.physicsData.isGrounded = false;
+
+        if (intersects.length > 0) {
+            groundHeight = intersects[0].point.y;
+            this.physicsData.surfaceNormal.copy(intersects[0].face.normal);
+            
+            // Suspension logic
+            if (this.meshGroup.position.y - groundHeight <= 1.0) {
+                this.physicsData.isGrounded = true;
+                this.meshGroup.position.y = groundHeight + 1.0;
+                this.physicsData.velocity.y = 0;
+                
+                // Align to surface normal (Pitch & Roll)
+                const targetQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), this.physicsData.surfaceNormal);
+                // Keep the Y-axis rotation (Yaw) from user steering
+                const yawQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), this.meshGroup.rotation.y);
+                targetQuat.multiply(yawQuat);
+                
+                this.meshGroup.quaternion.slerp(targetQuat, 10 * dt);
+            }
+        }
+
+        // Steering Logic
+        if (this.physicsData.isGrounded) {
+            let turnAmt = 0;
+            if (input.a) turnAmt += this.tuning.handling * dt;
+            if (input.d) turnAmt -= this.tuning.handling * dt;
+            
+            // Reduce turning at low speeds
+            const speedRatio = this.physicsData.velocity.length() / this.tuning.maxVel;
+            turnAmt *= Math.min(speedRatio * 5, 1.0);
+            
+            // Reverse turning direction if going backwards
+            const localZ = new THREE.Vector3(0,0,1).applyQuaternion(this.meshGroup.quaternion);
+            if (this.physicsData.velocity.dot(localZ) < -0.1) turnAmt *= -1;
+
+            this.meshGroup.rotateY(turnAmt);
+            
+            // Wheel visual rotation
+            this.wheels[0].rotation.y = turnAmt * 10;
+            this.wheels[1].rotation.y = turnAmt * 10;
+        }
+
+        // Acceleration Logic
+        const forwardDir = new THREE.Vector3(0,0,1).applyQuaternion(this.meshGroup.quaternion);
+        if (this.physicsData.isGrounded) {
+            let force = 0;
+            if (input.w) force += this.tuning.accelForce;
+            if (input.s) force -= this.tuning.accelForce * 0.7; // Brake/Reverse
+            
+            this.physicsData.velocity.add(forwardDir.multiplyScalar(force * dt));
+            this.physicsData.velocity.multiplyScalar(this.tuning.frictionGround);
+        } else {
+            // Airborn physics (Gravity)
+            this.physicsData.velocity.y += this.tuning.gravity * dt;
+            this.physicsData.velocity.x *= this.tuning.frictionAir;
+            this.physicsData.velocity.z *= this.tuning.frictionAir;
+        }
+
+        // Clamp Maximum Speed
+        const horizontalVel = new THREE.Vector2(this.physicsData.velocity.x, this.physicsData.velocity.z);
+        if (horizontalVel.length() > this.tuning.maxVel) {
+            horizontalVel.normalize().multiplyScalar(this.tuning.maxVel);
+            this.physicsData.velocity.x = horizontalVel.x;
+            this.physicsData.velocity.z = horizontalVel.y;
+        }
+
+        // Apply Kinematic Integration
+        this.meshGroup.position.add(this.physicsData.velocity.clone().multiplyScalar(dt));
+
+        // Wheel spinning animation
+        const speed = this.physicsData.velocity.length();
+        this.wheels.forEach(w => w.rotation.x += speed * dt);
+
+        // Action / Item deployment
+        if (input.sp && this.isLocal && this.state.activeItem !== 0) {
+            EnvironmentCore.deployItemCommand(this.uid, this.state.activeItem);
+            this.state.activeItem = 0;
+            input.sp = 0; // debounce
+        }
+        
+        // Hazard Death Boundary (Water/Lava)
+        if (this.meshGroup.position.y < -2 || (Math.abs(this.meshGroup.position.x) < 40 && Math.abs(this.meshGroup.position.z) < 40 && this.meshGroup.position.y < 6)) {
+            // Reset logic
+            this.meshGroup.position.set(0, 30, 0); // Drop from sky
+            this.physicsData.velocity.set(0,0,0);
+            if (this.isLocal && AppState.networkRole === 'HOST') {
+                AppState.entityRegistry[this.uid].score = Math.max(0, AppState.entityRegistry[this.uid].score - 10);
+            }
+        }
+    }
+
+    applyImpactForce(originPos, strength) {
+        if (this.state.invulnTimer > 0) return;
+        
+        const dir = this.meshGroup.position.clone().sub(originPos).normalize();
+        dir.y = 1.0; // Knock upward
+        this.physicsData.velocity.add(dir.multiplyScalar(strength));
+        this.state.invulnTimer = 2.0; // 2 seconds iframes
+        
+        if (this.isLocal) InterfaceController.triggerVisualDamage();
+    }
+}
+
+/**
+ * Item Box Generator & Logic System
+ */
+class CollectibleSubsystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.nodes = [];
+        this.constructGeometry();
+    }
+
+    constructGeometry() {
+        const boxGeo = new THREE.BoxGeometry(3, 3, 3);
+        
+        // Create procedural ? texture
+        const cvs = document.createElement('canvas');
+        cvs.width = 256; cvs.height = 256;
+        const ctx = cvs.getContext('2d');
+        
+        // Base gradient
+        const grad = ctx.createLinearGradient(0,0,256,256);
+        grad.addColorStop(0, '#00e5ff');
+        grad.addColorStop(1, '#ff0055');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0,0,256,256);
+        
+        // Question mark
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 150px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('?', 128, 128);
+        
+        const tex = new THREE.CanvasTexture(cvs);
+        const boxMat = new THREE.MeshStandardMaterial({
+            map: tex,
+            emissive: 0x222222,
+            metalness: 0.5,
+            roughness: 0.2
+        });
+
+        // Distribute items across the island
+        if (AppState.networkRole === 'HOST') {
+            for(let i=0; i<25; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const r = MathUtils.randomRange(20, 200);
+                const x = Math.cos(a) * r;
+                const z = Math.sin(a) * r;
+                const y = EnvironmentCore.terrainModule.getTerrainHeightAt(x, z) + 3;
+                
+                const mesh = new THREE.Mesh(boxGeo, boxMat);
+                mesh.position.set(x, y, z);
+                mesh.castShadow = true;
+                this.scene.add(mesh);
+                
+                this.nodes.push({ id: i, mesh, active: true, respawnCd: 0 });
+            }
+        }
+    }
+
+    tick(dt) {
+        const time = Date.now() * 0.003;
+        this.nodes.forEach(node => {
+            if (node.active) {
+                node.mesh.rotation.y += 2 * dt;
+                node.mesh.rotation.x = Math.sin(time + node.id) * 0.3;
+                node.mesh.position.y += Math.cos(time * 2 + node.id) * 0.05;
+                node.mesh.visible = true;
+            } else if (AppState.networkRole === 'HOST') {
+                node.respawnCd -= dt;
+                if (node.respawnCd <= 0) node.active = true;
+                node.mesh.visible = false;
             }
         });
     }
-    getState() { return this.boxes.map(b => b.active); }
-    setState(state) { state.forEach((active, i) => { if(this.boxes[i]) this.boxes[i].active = active; }); }
+
+    evaluateProximity(actor) {
+        if (AppState.networkRole !== 'HOST') return;
+        
+        this.nodes.forEach(node => {
+            if (node.active && actor.meshGroup.position.distanceTo(node.mesh.position) < 5.0) {
+                node.active = false;
+                node.respawnCd = 10.0; // 10 seconds respawn
+                
+                // RNG Item: 1 (Missile), 2 (Mine), 3 (Boost)
+                const lootClass = Math.floor(MathUtils.randomRange(1, 4));
+                actor.state.activeItem = lootClass;
+                
+                AppState.entityRegistry[actor.uid].score += 5; // Points for boxes
+                
+                NetworkController.transmitAll({
+                    op: 'ARENA_EVENT',
+                    payload: { type: 'LOOT_ACQUIRE', uid: actor.uid, class: lootClass }
+                });
+                
+                if (actor.isLocal) EngineCore.processNetworkEvent({ type: 'LOOT_ACQUIRE', uid: actor.uid, class: lootClass });
+            }
+        });
+    }
+
+    getStates() { return this.nodes.map(n => n.active); }
+    applyStates(dataArr) {
+        dataArr.forEach((isActive, idx) => {
+            if(this.nodes[idx]) this.nodes[idx].active = isActive;
+        });
+    }
 }
 
-class WeaponManager {
-    constructor() { this.weps = []; }
-    spawnMissile(pos, dir, owner) {
-        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 2, 8), new THREE.MeshPhongMaterial({color:0xff0000}));
-        mesh.rotation.x = Math.PI/2; mesh.position.copy(pos); mesh.position.y = 1;
+/**
+ * Combat Weapons & Hazards Subsystem
+ */
+class OrdnanceSubsystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.activeOrdnance = [];
         
-        // Orient to direction
-        const target = pos.clone().add(dir);
-        mesh.lookAt(target);
+        // Caching geometries for performance
+        this.geoMissile = new THREE.CylinderGeometry(0.8, 0.8, 3.5, 8);
+        this.geoMissile.rotateX(Math.PI/2);
+        this.matMissile = new THREE.MeshStandardMaterial({color: 0xff0055, emissive: 0x550000});
         
-        Engine.scene.add(mesh);
-        this.weps.push({ type: 1, mesh, dir, owner, life: 150 });
-        AudioSys.play('shoot');
+        this.geoMine = new THREE.SphereGeometry(1.5, 12, 12);
+        this.matMine = new THREE.MeshStandardMaterial({color: 0x111111, bumpScale: 0.5});
     }
-    spawnMine(pos, owner) {
-        const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 8), new THREE.MeshPhongMaterial({color:0x222222}));
-        mesh.position.copy(pos); mesh.position.y = 1;
-        Engine.scene.add(mesh);
-        this.weps.push({ type: 2, mesh, owner, life: 1000 });
+
+    spawnProjectile(originPos, directionVec, ownerId) {
+        const mesh = new THREE.Mesh(this.geoMissile, this.matMissile);
+        mesh.position.copy(originPos);
+        mesh.lookAt(originPos.clone().add(directionVec));
+        
+        this.scene.add(mesh);
+        this.activeOrdnance.push({
+            type: 1,
+            mesh: mesh,
+            dir: directionVec,
+            owner: ownerId,
+            ttl: 3.0 // 3 seconds lifespan
+        });
     }
-    update() {
-        for(let i = this.weps.length - 1; i >= 0; i--) {
-            const w = this.weps[i];
-            w.life--;
-            if(w.type === 1) { // Missile
-                w.mesh.position.add(w.dir.clone().multiplyScalar(3.0)); // Fast speed
-                Engine.particles.spawn(w.mesh.position, 0xffaa00, 1);
-            }
-            if(w.life <= 0) { Engine.scene.remove(w.mesh); this.weps.splice(i, 1); }
-        }
+
+    spawnStaticHazard(originPos, ownerId) {
+        const mesh = new THREE.Mesh(this.geoMine, this.matMine);
+        mesh.position.copy(originPos);
+        this.scene.add(mesh);
+        this.activeOrdnance.push({
+            type: 2,
+            mesh: mesh,
+            owner: ownerId,
+            ttl: 30.0 // 30 seconds lifespan
+        });
     }
-    checkCollision(kart) {
-        for(let i = this.weps.length - 1; i >= 0; i--) {
-            const w = this.weps[i];
-            if(w.owner === kart.pid && w.type === 1 && w.life > 140) continue; // Don't hit self immediately with missile
+
+    tick(dt) {
+        for (let i = this.activeOrdnance.length - 1; i >= 0; i--) {
+            const ord = this.activeOrdnance[i];
+            ord.ttl -= dt;
             
-            if(kart.mesh.position.distanceTo(w.mesh.position) < 3.5) {
-                kart.hit();
-                Engine.particles.spawnExplosion(w.mesh.position);
-                Engine.scene.remove(w.mesh);
-                this.weps.splice(i, 1);
-                Net.broadcast({type:'event', evt:{action:'hit', pid:kart.pid, pos:w.mesh.position.toArray()}});
-                if(kart.isLocal) Engine.handleNetEvent({action:'hit', pid:kart.pid, pos:w.mesh.position.toArray()});
+            if (ord.type === 1) { // Missile processing
+                ord.mesh.position.add(ord.dir.clone().multiplyScalar(150 * dt)); // High speed
+                
+                // Spawn particle trail (Simulated via simple object generation)
+                EnvironmentCore.particleEngine.emit(ord.mesh.position, 0xffaa00, 1);
+            }
+            
+            if (ord.ttl <= 0) {
+                this.scene.remove(ord.mesh);
+                this.activeOrdnance.splice(i, 1);
             }
         }
     }
-    getState() { return this.weps.map(w => ({ t:w.type, p:w.mesh.position.toArray(), d:w.dir?w.dir.toArray():null })); }
-    setState(state) {
-        // Simple client side recreation (visual only)
-        this.weps.forEach(w => Engine.scene.remove(w.mesh));
-        this.weps = [];
-        state.forEach(w => {
-            const pos = new THREE.Vector3().fromArray(w.p);
-            if(w.t === 1) {
-                const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,2,8), new THREE.MeshBasicMaterial({color:0xff0000}));
+
+    evaluateDetonation(actor) {
+        if (AppState.networkRole !== 'HOST') return;
+
+        for (let i = this.activeOrdnance.length - 1; i >= 0; i--) {
+            const ord = this.activeOrdnance[i];
+            
+            // Immunity logic for owner's own missile right after firing
+            if (ord.owner === actor.uid && ord.type === 1 && ord.ttl > 2.8) continue;
+            
+            if (actor.meshGroup.position.distanceTo(ord.mesh.position) < 6.0) {
+                // Detonate
+                actor.applyImpactForce(ord.mesh.position, 80); // Massive knockback
+                
+                EnvironmentCore.particleEngine.emitExplosion(ord.mesh.position);
+                this.scene.remove(ord.mesh);
+                this.activeOrdnance.splice(i, 1);
+                
+                // Scoring deduction
+                AppState.entityRegistry[actor.uid].score = Math.max(0, AppState.entityRegistry[actor.uid].score - 15);
+                if (AppState.entityRegistry[ord.owner]) AppState.entityRegistry[ord.owner].score += 25;
+                
+                NetworkController.transmitAll({
+                    op: 'ARENA_EVENT',
+                    payload: { type: 'DETONATION', uid: actor.uid, pos: ord.mesh.position.toArray() }
+                });
+                
+                if (actor.isLocal) EngineCore.processNetworkEvent({ type: 'DETONATION', uid: actor.uid, pos: ord.mesh.position.toArray() });
+            }
+        }
+    }
+
+    getStates() { 
+        return this.activeOrdnance.map(o => ({ 
+            t: o.type, 
+            p: o.mesh.position.toArray(), 
+            d: o.dir ? o.dir.toArray() : null 
+        })); 
+    }
+    
+    applyStates(dataArr) {
+        // Visual sync only for clients
+        this.activeOrdnance.forEach(o => this.scene.remove(o.mesh));
+        this.activeOrdnance = [];
+        
+        dataArr.forEach(data => {
+            const pos = new THREE.Vector3().fromArray(data.p);
+            let mesh;
+            if (data.t === 1) {
+                mesh = new THREE.Mesh(this.geoMissile, this.matMissile);
                 mesh.position.copy(pos);
-                if(w.d) { const dir = new THREE.Vector3().fromArray(w.d); mesh.lookAt(pos.clone().add(dir)); }
-                mesh.rotation.x = Math.PI/2;
-                Engine.scene.add(mesh); this.weps.push({mesh});
-            } else if (w.t === 2) {
-                const mesh = new THREE.Mesh(new THREE.SphereGeometry(1,8,8), new THREE.MeshBasicMaterial({color:0x222222}));
-                mesh.position.copy(pos); Engine.scene.add(mesh); this.weps.push({mesh});
+                if (data.d) mesh.lookAt(pos.clone().add(new THREE.Vector3().fromArray(data.d)));
+            } else {
+                mesh = new THREE.Mesh(this.geoMine, this.matMine);
+                mesh.position.copy(pos);
             }
+            this.scene.add(mesh);
+            this.activeOrdnance.push({ mesh });
         });
     }
 }
 
-class ParticleSystem {
-    constructor() {
-        this.parts = [];
-        this.geo = new THREE.BoxGeometry(0.5,0.5,0.5);
+/**
+ * Lightweight CPU Particle System
+ */
+class VFXSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.particles = [];
+        this.baseGeo = new THREE.BoxGeometry(1, 1, 1);
     }
-    spawn(pos, color, amt) {
-        const mat = new THREE.MeshBasicMaterial({color});
-        for(let i=0; i<amt; i++) {
-            const m = new THREE.Mesh(this.geo, mat); m.position.copy(pos);
-            const v = new THREE.Vector3(Utils.rand(-0.2,0.2), Utils.rand(0.1,0.5), Utils.rand(-0.2,0.2));
-            Engine.scene.add(m); this.parts.push({m,v, life:20});
+    
+    emit(pos, colorHex, count) {
+        const mat = new THREE.MeshBasicMaterial({color: colorHex});
+        for(let i=0; i<count; i++) {
+            const mesh = new THREE.Mesh(this.baseGeo, mat);
+            mesh.position.copy(pos);
+            const vel = new THREE.Vector3(
+                MathUtils.randomRange(-0.5, 0.5),
+                MathUtils.randomRange(0.2, 1.0),
+                MathUtils.randomRange(-0.5, 0.5)
+            );
+            this.scene.add(mesh);
+            this.particles.push({ mesh, vel, life: 1.0 });
         }
     }
-    spawnExplosion(pos) {
-        AudioSys.play('hit');
-        this.spawn(pos, 0xff5500, 20);
-        this.spawn(pos, 0xffff00, 10);
+    
+    emitExplosion(pos) {
+        this.emit(pos, 0xff0055, 30);
+        this.emit(pos, 0xffdd00, 20);
+        this.emit(pos, 0x111111, 15);
     }
-    update() {
-        for(let i = this.parts.length - 1; i >= 0; i--) {
-            const p = this.parts[i];
-            p.m.position.add(p.v); p.m.scale.multiplyScalar(0.9); p.life--;
-            if(p.life <= 0) { Engine.scene.remove(p.m); this.parts.splice(i,1); }
-        }
-    }
-}
-
-const Engine = {
-    scene: null, camera: null, renderer: null,
-    karts: {}, localKart: null,
-    items: null, weapons: null, particles: null,
-    animFrame: null, lastTick: 0,
-
-    start: (seed) => {
-        document.getElementById('ui-layer').style.pointerEvents = 'none';
-        UI.nav(null); // Hide all screens
-        document.getElementById('hud').style.display = 'block';
-        document.getElementById('crosshair').style.display = 'block';
-        State.inGame = true;
-
-        Engine.scene = new THREE.Scene();
-        Engine.scene.background = new THREE.Color(0x87CEEB);
-        Engine.scene.fog = new THREE.FogExp2(0x87CEEB, 0.005);
-
-        Engine.camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000);
-        
-        Engine.renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game-canvas'), antialias: true });
-        Engine.renderer.setSize(window.innerWidth, window.innerHeight);
-        Engine.renderer.shadowMap.enabled = true;
-
-        // Lighting
-        const amb = new THREE.AmbientLight(0xffffff, 0.4); Engine.scene.add(amb);
-        const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-        dir.position.set(100, 150, 50); dir.castShadow = true;
-        dir.shadow.camera.left = -150; dir.shadow.camera.right = 150;
-        dir.shadow.camera.top = 150; dir.shadow.camera.bottom = -150;
-        Engine.scene.add(dir);
-
-        // Environment (Procedural Arena)
-        Math.seedrandom = seed; // pseudo seed
-        const floorGeo = new THREE.CylinderGeometry(150, 150, 1, 64);
-        
-        // Procedural Checker Texture
-        const fcvs = document.createElement('canvas'); fcvs.width=512; fcvs.height=512;
-        const fctx = fcvs.getContext('2d');
-        fctx.fillStyle='#2c3e50'; fctx.fillRect(0,0,512,512);
-        fctx.fillStyle='#34495e';
-        for(let i=0;i<8;i++) for(let j=0;j<8;j++) if((i+j)%2===0) fctx.fillRect(i*64,j*64,64,64);
-        const ftex = new THREE.CanvasTexture(fcvs); ftex.wrapS = ftex.wrapT = THREE.RepeatWrapping; ftex.repeat.set(20,20);
-        
-        const floorMat = new THREE.MeshStandardMaterial({ map: ftex, roughness: 0.8 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.position.y = -0.5; floor.receiveShadow = true;
-        Engine.scene.add(floor);
-
-        // Walls
-        const wallGeo = new THREE.TorusGeometry(150, 5, 16, 64);
-        const wallMat = new THREE.MeshPhongMaterial({color: 0xff3366});
-        const wall = new THREE.Mesh(wallGeo, wallMat); wall.rotation.x = Math.PI/2; wall.position.y = 2; wall.castShadow = true;
-        Engine.scene.add(wall);
-
-        // Obstacles
-        for(let i=0; i<20; i++) {
-            const o = new THREE.Mesh(new THREE.BoxGeometry(4, 10, 4), new THREE.MeshPhongMaterial({color:0xaaaaaa}));
-            const a = Utils.rand(0, Math.PI*2); const r = Utils.rand(20, 130);
-            o.position.set(Math.cos(a)*r, 5, Math.sin(a)*r);
-            o.castShadow = true; Engine.scene.add(o);
-        }
-
-        Engine.items = new ItemManager();
-        Engine.weapons = new WeaponManager();
-        Engine.particles = new ParticleSystem();
-
-        // Spawn Players
-        const players = Object.values(State.players);
-        players.forEach((p, i) => {
-            const angle = (i / players.length) * Math.PI * 2;
-            const startPos = new THREE.Vector3(Math.cos(angle)*20, 0, Math.sin(angle)*20);
-            const isLoc = p.id === State.localId;
-            const k = new Kart(p.id, p, isLoc, startPos);
-            Engine.karts[p.id] = k;
-            if(isLoc) Engine.localKart = k;
-        });
-
-        window.addEventListener('resize', Engine.resize);
-        Engine.loop();
-    },
-
-    useItem: (kart) => {
-        const item = kart.item; kart.item = 0;
-        const dir = new THREE.Vector3(0,0,1).applyQuaternion(kart.mesh.quaternion);
-        
-        if(State.isHost) {
-            if(item === 1) Engine.weapons.spawnMissile(kart.mesh.position.clone().add(dir.clone().multiplyScalar(4)), dir, kart.pid);
-            if(item === 2) Engine.weapons.spawnMine(kart.mesh.position.clone().sub(dir.clone().multiplyScalar(4)), kart.pid);
-        }
-        
-        if(item === 3) {
-            kart.velocity.add(dir.multiplyScalar(3.0)); // Boost
-            AudioSys.play('shoot');
-            if(kart.isLocal) Engine.particles.spawn(kart.mesh.position, 0x00ffff, 30);
-        }
-
-        if(kart.isLocal) UI.updateHUD();
-        Net.broadcast({type:'event', evt:{action:'use', pid:kart.pid, item:item}});
-    },
-
-    handleNetEvent: (evt) => {
-        if(evt.action === 'pickup') {
-            if(Engine.karts[evt.pid]) {
-                Engine.karts[evt.pid].item = evt.item;
-                AudioSys.play('coin');
-                if(evt.pid === State.localId) { Save.addMoney(10); UI.updateHUD(); }
-            }
-        }
-        else if (evt.action === 'hit') {
-            Engine.particles.spawnExplosion(new THREE.Vector3().fromArray(evt.pos));
-            if(Engine.karts[evt.pid]) Engine.karts[evt.pid].hit();
-        }
-        else if (evt.action === 'use') {
-            const k = Engine.karts[evt.pid];
-            if(k && evt.item === 3) Engine.particles.spawn(k.mesh.position, 0x00ffff, 30);
-        }
-    },
-
-    applySnapshot: (snap) => {
-        for(let id in snap.k) {
-            if(id === State.localId) continue; // Don't override local prediction
-            const k = Engine.karts[id];
-            if(k) {
-                // Interpolation could go here, snapping for simple implementation
-                k.mesh.position.fromArray(snap.k[id].p);
-                k.mesh.rotation.fromArray(snap.k[id].r);
-                k.velocity.fromArray(snap.k[id].v);
-            }
-        }
-        for(let id in snap.s) { if(State.players[id]) State.players[id].score = snap.s[id]; }
-        if(!State.isHost) {
-            Engine.items.setState(snap.p);
-            Engine.weapons.setState(snap.w);
-        }
-        UI.updateHUD();
-    },
-
-    loop: () => {
-        if(!State.inGame) return;
-        Engine.animFrame = requestAnimationFrame(Engine.loop);
-
-        const now = Date.now();
-
-        // Update entities
-        Object.values(Engine.karts).forEach(k => k.update());
-        Engine.items.update();
-        Engine.weapons.update();
-        Engine.particles.update();
-
-        // Network tick
-        if(now - Engine.lastTick > (1000 / State.tickRate)) {
-            if(State.isHost) Engine.broadcastGame();
-            else Net.sendInput();
-            Engine.lastTick = now;
-        }
-
-        // Camera follow
-        if(Engine.localKart) {
-            const k = Engine.localKart.mesh;
-            const offset = new THREE.Vector3(0, 5, -12).applyQuaternion(k.quaternion);
-            const targetPos = k.position.clone().add(offset);
-            Engine.camera.position.lerp(targetPos, 0.1);
-            Engine.camera.lookAt(k.position.clone().add(new THREE.Vector3(0,2,0)));
+    
+    tick(dt) {
+        for(let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            p.life -= dt * 2.0;
             
-            // Speed FOV effect
-            const speed = Engine.localKart.velocity.length();
-            Engine.camera.fov = Utils.lerp(Engine.camera.fov, 70 + speed * 10, 0.1);
-            Engine.camera.updateProjectionMatrix();
+            p.mesh.position.add(p.vel);
+            p.mesh.scale.multiplyScalar(0.92);
+            
+            if(p.life <= 0) {
+                this.scene.remove(p.mesh);
+                this.particles.splice(i, 1);
+            }
+        }
+    }
+}
+
+/* ==========================================================================
+   PRIMARY ENGINE COORDINATOR
+   ========================================================================== */
+const EnvironmentCore = {
+    sceneGraph: null,
+    cameraRig: null,
+    renderer: null,
+    terrainModule: null,
+    itemSubsystem: null,
+    hazardSubsystem: null,
+    particleEngine: null,
+    actors: {},
+    localController: null
+};
+
+const EngineCore = {
+    animationHandle: null,
+    lastTime: 0,
+    accumulator: 0,
+    dtFixed: 1 / 60,
+
+    deployArena: () => {
+        if (AppState.networkRole !== 'HOST') return;
+        const genesisSeed = Math.random();
+        NetworkController.transmitAll({ op: 'DEPLOY_CMD', payload: { seed: genesisSeed } });
+        EngineCore.initializeGraphics(genesisSeed);
+    },
+
+    initializeGraphics: (seed) => {
+        InterfaceController.navigate(null);
+        document.getElementById('hud-layer').style.display = 'block';
+        document.getElementById('reticle-center').style.display = 'block';
+        AppState.engineStatus = 'ACTIVE';
+
+        // Three.js Core Init
+        const canvas = document.getElementById('engine-canvas');
+        EnvironmentCore.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "high-performance" });
+        EnvironmentCore.renderer.setSize(window.innerWidth, window.innerHeight);
+        EnvironmentCore.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        EnvironmentCore.renderer.shadowMap.enabled = true;
+        EnvironmentCore.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        EnvironmentCore.sceneGraph = new THREE.Scene();
+        EnvironmentCore.sceneGraph.fog = new THREE.FogExp2(0x55ccff, 0.002); // Horizon fade
+
+        EnvironmentCore.cameraRig = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+
+        // Modules Instantiation
+        EnvironmentCore.terrainModule = new TerrainGenerator(EnvironmentCore.sceneGraph, seed);
+        EnvironmentCore.itemSubsystem = new CollectibleSubsystem(EnvironmentCore.sceneGraph);
+        EnvironmentCore.hazardSubsystem = new OrdnanceSubsystem(EnvironmentCore.sceneGraph);
+        EnvironmentCore.particleEngine = new VFXSystem(EnvironmentCore.sceneGraph);
+
+        // Actor Spawning
+        const participantArray = Object.values(AppState.entityRegistry);
+        const radius = 40;
+        
+        participantArray.forEach((entData, index) => {
+            const theta = (index / participantArray.length) * Math.PI * 2;
+            const startX = Math.cos(theta) * radius;
+            const startZ = Math.sin(theta) * radius;
+            const startY = EnvironmentCore.terrainModule.getTerrainHeightAt(startX, startZ) + 5;
+            const spawnPos = new THREE.Vector3(startX, startY, startZ);
+            
+            const isSelf = entData.id === AppState.localIdentifier;
+            const actor = new KinematicActor(entData.id, entData, isSelf, spawnPos);
+            
+            // Align rotation to face center initially
+            actor.meshGroup.lookAt(0, startY, 0);
+            
+            EnvironmentCore.actors[entData.id] = actor;
+            if (isSelf) EnvironmentCore.localController = actor;
+        });
+
+        window.addEventListener('resize', EngineCore.handleViewportResize);
+        InputManager.initialize();
+
+        EngineCore.lastTime = performance.now();
+        EngineCore.executePipeline();
+        
+        InterfaceController.pushNotification('ARENA INITIALIZATION COMPLETE', 'success');
+    },
+
+    executePipeline: () => {
+        if (AppState.engineStatus !== 'ACTIVE') return;
+        EngineCore.animationHandle = requestAnimationFrame(EngineCore.executePipeline);
+
+        const now = performance.now();
+        let frameTime = (now - EngineCore.lastTime) / 1000.0;
+        EngineCore.lastTime = now;
+        
+        if (frameTime > 0.25) frameTime = 0.25; // Prevent spiral of death on lag
+        EngineCore.accumulator += frameTime;
+
+        // Fixed timestep physics update
+        while (EngineCore.accumulator >= EngineCore.dtFixed) {
+            EngineCore.tickLogic(EngineCore.dtFixed);
+            EngineCore.accumulator -= EngineCore.dtFixed;
         }
 
-        Engine.renderer.render(Engine.scene, Engine.camera);
+        // Camera Tracking (Smooth follow)
+        if (EnvironmentCore.localController) {
+            const targetKart = EnvironmentCore.localController.meshGroup;
+            
+            // Dynamic Camera Positioning
+            const camOffset = new THREE.Vector3(0, 8, -18);
+            camOffset.applyQuaternion(targetKart.quaternion);
+            const desiredCamPos = targetKart.position.clone().add(camOffset);
+            
+            EnvironmentCore.cameraRig.position.lerp(desiredCamPos, 0.1);
+            
+            const lookTarget = targetKart.position.clone().add(new THREE.Vector3(0, 3, 0));
+            EnvironmentCore.cameraRig.lookAt(lookTarget);
+            
+            // Speed based FOV warping
+            const spd = EnvironmentCore.localController.physicsData.velocity.length();
+            const targetFov = 75 + (spd * 0.15);
+            EnvironmentCore.cameraRig.fov = MathUtils.lerp(EnvironmentCore.cameraRig.fov, targetFov, 0.1);
+            EnvironmentCore.cameraRig.updateProjectionMatrix();
+        }
+
+        // Render pass
+        EnvironmentCore.renderer.render(EnvironmentCore.sceneGraph, EnvironmentCore.cameraRig);
     },
 
-    stop: () => {
-        if(Engine.animFrame) cancelAnimationFrame(Engine.animFrame);
-        State.inGame = false;
-        document.getElementById('hud').style.display = 'none';
-        document.getElementById('crosshair').style.display = 'none';
-        document.getElementById('ui-layer').style.pointerEvents = 'auto';
-        if(Engine.renderer) Engine.renderer.dispose();
-        document.getElementById('game-canvas').remove();
-        const c = document.createElement('canvas'); c.id = 'game-canvas';
-        document.getElementById('game-canvas-container').appendChild(c);
+    tickLogic: (dt) => {
+        // Environment animation
+        EnvironmentCore.terrainModule.update(performance.now() * 0.001);
+        EnvironmentCore.itemSubsystem.tick(dt);
+        EnvironmentCore.hazardSubsystem.tick(dt);
+        EnvironmentCore.particleEngine.tick(dt);
+
+        // Actor Physics
+        for (let uid in EnvironmentCore.actors) {
+            const act = EnvironmentCore.actors[uid];
+            act.tick(dt, EnvironmentCore.terrainModule.terrainMesh);
+            
+            if (AppState.networkRole === 'HOST') {
+                EnvironmentCore.itemSubsystem.evaluateProximity(act);
+                EnvironmentCore.hazardSubsystem.evaluateDetonation(act);
+            }
+        }
+
+        // Networking Sync
+        if (AppState.networkRole === 'HOST') {
+            // Host sends canonical state 30 times a second
+            if (Math.random() < (AppState.tickRateHz * dt)) { 
+                NetworkController.synchronizeArenaState();
+            }
+        } else {
+            // Client sends input 30 times a second
+            if (Math.random() < (AppState.tickRateHz * dt)) {
+                NetworkController.transmitInput();
+            }
+        }
+        
+        InterfaceController.updateHUD();
     },
 
-    resize: () => {
-        if(!Engine.camera) return;
-        Engine.camera.aspect = window.innerWidth / window.innerHeight;
-        Engine.camera.updateProjectionMatrix();
-        Engine.renderer.setSize(window.innerWidth, window.innerHeight);
+    deployItemCommand: (uid, itemClass) => {
+        const actor = EnvironmentCore.actors[uid];
+        if (!actor) return;
+        
+        const fwd = new THREE.Vector3(0,0,1).applyQuaternion(actor.meshGroup.quaternion);
+        
+        if (AppState.networkRole === 'HOST') {
+            if (itemClass === 1) {
+                const spawnPos = actor.meshGroup.position.clone().add(fwd.clone().multiplyScalar(6));
+                spawnPos.y += 2;
+                EnvironmentCore.hazardSubsystem.spawnProjectile(spawnPos, fwd, uid);
+            } else if (itemClass === 2) {
+                const spawnPos = actor.meshGroup.position.clone().sub(fwd.clone().multiplyScalar(5));
+                EnvironmentCore.hazardSubsystem.spawnStaticHazard(spawnPos, uid);
+            }
+        }
+        
+        if (itemClass === 3) {
+            // Turbo Boost (Client side predict allowed)
+            actor.physicsData.velocity.add(fwd.multiplyScalar(150));
+            EnvironmentCore.particleEngine.emit(actor.meshGroup.position, 0x00e5ff, 40);
+        }
+        
+        // Broadcast usage intent
+        NetworkController.transmitAll({
+            op: 'ARENA_EVENT',
+            payload: { type: 'ITEM_DEPLOY', uid: uid, class: itemClass }
+        });
+    },
+
+    processNetworkEvent: (payload) => {
+        if (payload.type === 'LOOT_ACQUIRE') {
+            if (EnvironmentCore.actors[payload.uid]) {
+                EnvironmentCore.actors[payload.uid].state.activeItem = payload.class;
+                if (payload.uid === AppState.localIdentifier) {
+                    DataStore.transactFunds(25);
+                }
+            }
+        } else if (payload.type === 'DETONATION') {
+            const pos = new THREE.Vector3().fromArray(payload.pos);
+            EnvironmentCore.particleEngine.emitExplosion(pos);
+            if (EnvironmentCore.actors[payload.uid]) {
+                EnvironmentCore.actors[payload.uid].applyImpactForce(pos, 80);
+            }
+        } else if (payload.type === 'ITEM_DEPLOY') {
+            const act = EnvironmentCore.actors[payload.uid];
+            if (act && payload.class === 3) {
+                EnvironmentCore.particleEngine.emit(act.meshGroup.position, 0x00e5ff, 40);
+            }
+        }
+    },
+
+    applyInterpolationSnapshot: (snap) => {
+        for (let uid in snap.kinematics) {
+            if (uid === AppState.localIdentifier) continue; // Let client predict own movement
+            
+            const kine = snap.kinematics[uid];
+            const act = EnvironmentCore.actors[uid];
+            
+            if (act) {
+                // Hard snap for prototype. Production would lerp.
+                act.meshGroup.position.fromArray(kine.p);
+                act.meshGroup.quaternion.fromArray(kine.q);
+                act.physicsData.velocity.fromArray(kine.v);
+            }
+        }
+        
+        for (let uid in snap.entities) {
+            if (AppState.entityRegistry[uid]) {
+                AppState.entityRegistry[uid].score = snap.entities[uid];
+            }
+        }
+        
+        if (AppState.networkRole === 'CLIENT') {
+            EnvironmentCore.itemSubsystem.applyStates(snap.environment.pickups);
+            EnvironmentCore.hazardSubsystem.applyStates(snap.environment.hazards);
+        }
+    },
+
+    terminateArena: () => {
+        if (EngineCore.animationHandle) cancelAnimationFrame(EngineCore.animationHandle);
+        
+        document.getElementById('hud-layer').style.display = 'none';
+        document.getElementById('reticle-center').style.display = 'none';
+        
+        if (EnvironmentCore.renderer) {
+            EnvironmentCore.renderer.dispose();
+            const canvas = document.getElementById('engine-canvas');
+            const parent = canvas.parentNode;
+            parent.removeChild(canvas);
+            const newCanvas = document.createElement('canvas');
+            newCanvas.id = 'engine-canvas';
+            parent.appendChild(newCanvas);
+        }
+        
+        EnvironmentCore.actors = {};
+        EnvironmentCore.localController = null;
+    },
+
+    handleViewportResize: () => {
+        if (!EnvironmentCore.cameraRig || !EnvironmentCore.renderer) return;
+        EnvironmentCore.cameraRig.aspect = window.innerWidth / window.innerHeight;
+        EnvironmentCore.cameraRig.updateProjectionMatrix();
+        EnvironmentCore.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 };
 
-// Initial Setup
-UI.nav('screen-main');
+/* ==========================================================================
+   BOOTSTRAP EXECUTION
+   ========================================================================== */
+DataStore.initialize();
+setTimeout(() => InterfaceController.navigate('view-root'), 1000); // Fake load delay
 </script>
 </body>
 </html>

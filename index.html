@@ -1,905 +1,1017 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D WebRTC Kart Racing</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a2e;
-            color: #fff;
-            user-select: none;
-        }
-        #game-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-            display: none;
-        }
-        .ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: radial-gradient(circle, #16213e 0%, #0f3460 100%);
-        }
-        h1 {
-            font-size: 4rem;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            text-shadow: 0 0 20px #e94560;
-            color: #e94560;
-            margin-bottom: 50px;
-        }
-        .btn {
-            background-color: #e94560;
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 8px;
-            margin: 10px;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
-        }
-        .btn:hover {
-            transform: scale(1.05);
-            background-color: #ff5c77;
-        }
-        .btn:active {
-            transform: scale(0.95);
-        }
-        .input-box {
-            padding: 15px;
-            font-size: 1.5rem;
-            border-radius: 8px;
-            border: 2px solid #e94560;
-            background: rgba(0,0,0,0.5);
-            color: white;
-            text-align: center;
-            margin: 10px;
-            outline: none;
-        }
-        .panel {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 40px;
-            border-radius: 15px;
-            border: 2px solid #e94560;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 400px;
-        }
-        #hud {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 5;
-            display: none;
-            pointer-events: none;
-        }
-        .hud-element {
-            position: absolute;
-            background: rgba(0,0,0,0.6);
-            padding: 15px 25px;
-            border-radius: 10px;
-            border: 2px solid #e94560;
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-        #speedometer { bottom: 30px; right: 30px; }
-        #money-display { top: 30px; right: 30px; color: #ffd700; border-color: #ffd700; }
-        #powerup-display { bottom: 30px; left: 30px; width: 80px; height: 80px; display: flex; justify-content: center; align-items: center; border-radius: 50%; font-size: 2rem;}
-        
-        /* Specific Menus */
-        #menu-lobby, #menu-garage, #menu-join { display: none; }
-        
-        .player-list {
-            list-style: none;
-            padding: 0;
-            width: 100%;
-        }
-        .player-list li {
-            background: rgba(255,255,255,0.1);
-            margin: 5px 0;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: center;
-            font-size: 1.2rem;
-        }
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            margin: 15px 0;
-            font-size: 1.2rem;
-            align-items: center;
-        }
-        .color-picker {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .color-swatch {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 3px solid transparent;
-        }
-        .color-swatch.selected { border-color: white; transform: scale(1.1); }
-        #toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #e94560;
-            padding: 15px 30px;
-            border-radius: 5px;
-            z-index: 100;
-            display: none;
-            font-weight: bold;
-        }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Kart Bros 3D - Advanced Online WebRTC</title>
+<style>
+    :root {
+        --primary: #ff3366;
+        --primary-glow: rgba(255, 51, 102, 0.6);
+        --bg-dark: #0a0a12;
+        --bg-panel: #1a1a24;
+        --text: #ffffff;
+        --text-dim: #aaaaaa;
+        --gold: #ffd700;
+        --success: #00ff66;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text); overflow: hidden; width: 100vw; height: 100vh; }
+    canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+    #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: flex; flex-direction: column; pointer-events: none; }
+    .screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; align-items: center; justify-content: center; flex-direction: column; background: radial-gradient(circle at center, #1a1a2a 0%, #05050a 100%); pointer-events: auto; }
+    .screen.active { display: flex; }
+    .panel { background: rgba(20, 20, 30, 0.9); border: 2px solid var(--primary); border-radius: 16px; padding: 40px; box-shadow: 0 0 30px var(--primary-glow); display: flex; flex-direction: column; align-items: center; min-width: 450px; backdrop-filter: blur(10px); }
+    h1 { font-size: 4rem; text-transform: uppercase; font-weight: 900; font-style: italic; color: transparent; -webkit-text-stroke: 2px var(--primary); text-shadow: 0 0 20px var(--primary-glow); margin-bottom: 40px; letter-spacing: 2px; }
+    h2 { font-size: 2rem; color: var(--text); margin-bottom: 20px; }
+    h3 { font-size: 1.5rem; color: var(--text-dim); margin-bottom: 15px; }
+    .btn-group { display: flex; flex-direction: column; gap: 15px; width: 100%; }
+    button { background: linear-gradient(45deg, #cc0033, var(--primary)); color: white; border: none; padding: 18px 24px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); outline: none; position: relative; overflow: hidden; }
+    button::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent); transform: skewX(-20deg); transition: 0.5s; }
+    button:hover::after { left: 150%; }
+    button:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 20px var(--primary-glow); }
+    button:active { transform: translateY(2px) scale(0.98); }
+    button.secondary { background: linear-gradient(45deg, #333, #555); }
+    button.success { background: linear-gradient(45deg, #009933, var(--success)); color: black; }
+    button:disabled { background: #333; color: #666; cursor: not-allowed; box-shadow: none; transform: none; }
+    input[type="text"] { background: rgba(0,0,0,0.5); border: 2px solid #444; color: white; padding: 15px; font-size: 1.5rem; border-radius: 8px; text-align: center; width: 100%; outline: none; transition: 0.3s; text-transform: uppercase; font-family: monospace; letter-spacing: 5px; margin-bottom: 20px; }
+    input[type="text"]:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
+    
+    .stats-container { width: 100%; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .stat-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .stat-val { font-family: monospace; font-size: 1.4rem; color: var(--gold); }
+    .color-picker { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 20px 0; }
+    .color-swatch { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 3px solid #333; transition: 0.2s; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+    .color-swatch:hover { transform: scale(1.1); }
+    .color-swatch.active { border-color: white; transform: scale(1.15); box-shadow: 0 0 15px currentColor; }
+    
+    .lobby-info { width: 100%; text-align: center; margin-bottom: 30px; }
+    .lobby-code-box { background: rgba(0,0,0,0.5); border: 2px dashed var(--primary); padding: 20px; border-radius: 8px; margin: 15px 0; }
+    .lobby-code { font-size: 3rem; font-family: monospace; color: var(--gold); letter-spacing: 10px; user-select: text; cursor: text; }
+    .player-list { width: 100%; list-style: none; margin-bottom: 20px; max-height: 250px; overflow-y: auto; }
+    .player-list li { background: rgba(255,255,255,0.05); margin-bottom: 8px; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; transition: 0.3s; border-left: 5px solid transparent; }
+    .player-list li.is-host { border-left-color: var(--gold); }
+    
+    #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; display: none; padding: 20px; }
+    .hud-panel { background: rgba(10, 10, 15, 0.8); border: 2px solid var(--primary); border-radius: 12px; padding: 15px 25px; position: absolute; backdrop-filter: blur(5px); box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+    #hud-top-left { top: 20px; left: 20px; border-color: var(--gold); }
+    #hud-money { font-size: 2rem; color: var(--gold); font-family: monospace; font-weight: bold; }
+    #hud-bottom-right { bottom: 20px; right: 20px; text-align: right; }
+    #hud-speed { font-size: 2.5rem; font-family: monospace; font-weight: bold; color: white; font-style: italic; }
+    #hud-speed span { font-size: 1rem; color: var(--text-dim); font-style: normal; }
+    #hud-bottom-left { bottom: 20px; left: 20px; width: 100px; height: 100px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border-width: 4px; border-color: #00ffff; box-shadow: 0 0 20px rgba(0,255,255,0.3); }
+    #hud-item { font-size: 3rem; text-shadow: 0 0 10px #00ffff; }
+    #hud-top-right { top: 20px; right: 20px; border-color: #444; }
+    #leaderboard { list-style: none; font-family: monospace; font-size: 1.2rem; }
+    #leaderboard li { margin-bottom: 5px; display: flex; justify-content: space-between; gap: 20px; }
+    
+    #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; pointer-events: none; display: flex; flex-direction: column; gap: 10px; }
+    .toast { background: rgba(0,0,0,0.9); border-left: 5px solid var(--primary); color: white; padding: 15px 25px; border-radius: 4px; font-weight: bold; font-size: 1.1rem; box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: slideDown 0.3s forwards, fadeOut 0.3s forwards 2.7s; opacity: 0; transform: translateY(-20px); }
+    .toast.success { border-left-color: var(--success); }
+    .toast.warning { border-left-color: var(--gold); }
+    @keyframes slideDown { to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeOut { to { opacity: 0; transform: translateY(-20px); } }
+    
+    #loading-screen { background: #05050a; z-index: 999; }
+    .loader { border: 5px solid #333; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; pointer-events: none; display: none; }
+    .crosshair::before, .crosshair::after { content: ''; position: absolute; background: rgba(255,255,255,0.5); }
+    .crosshair::before { top: 50%; left: -5px; right: -5px; height: 2px; transform: translateY(-50%); }
+    .crosshair::after { left: 50%; top: -5px; bottom: -5px; width: 2px; transform: translateX(-50%); }
+    
+    #damage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, transparent 50%, rgba(255,0,0,0.3) 100%); pointer-events: none; opacity: 0; transition: opacity 0.1s; z-index: 4; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 </head>
 <body>
 
-    <div id="toast">Message</div>
+<div id="game-canvas-container"><canvas id="game-canvas"></canvas></div>
+<div id="damage-overlay"></div>
+<div id="crosshair" class="crosshair"></div>
 
-    <div id="menu-main" class="ui-layer">
+<div id="toast-container"></div>
+
+<div id="ui-layer">
+    <div id="screen-loading" class="screen active">
+        <div class="loader"></div>
+        <h2 id="loading-text">INITIALIZING ENGINE...</h2>
+    </div>
+
+    <div id="screen-main" class="screen">
         <h1>KART BROS 3D</h1>
         <div class="panel">
-            <button class="btn" onclick="UI.showMenu('menu-garage')">Garage & Upgrades</button>
-            <button class="btn" onclick="Network.hostGame()">Host Game</button>
-            <button class="btn" onclick="UI.showMenu('menu-join')">Join Game</button>
+            <div class="btn-group">
+                <button onclick="UI.nav('screen-garage')">Garage & Upgrades</button>
+                <button onclick="Net.hostGame()">Host Game Lobby</button>
+                <button onclick="UI.nav('screen-join')">Join Game Lobby</button>
+                <button class="secondary" onclick="Settings.toggleAudio()">Toggle Audio</button>
+            </div>
         </div>
     </div>
 
-    <div id="menu-join" class="ui-layer">
-        <h1>JOIN GAME</h1>
-        <div class="panel">
-            <input type="text" id="join-code" class="input-box" placeholder="Enter Lobby Code" autocomplete="off">
-            <button class="btn" onclick="Network.joinGame()">Connect</button>
-            <button class="btn" style="background:#555" onclick="UI.showMenu('menu-main')">Back</button>
-        </div>
-    </div>
-
-    <div id="menu-lobby" class="ui-layer">
-        <h1>LOBBY</h1>
-        <div class="panel">
-            <h2 style="color:#e94560">ROOM CODE: <span id="lobby-code-display" style="color:white; user-select:text;">Generating...</span></h2>
-            <p>Share this code with up to 4 friends!</p>
-            <ul id="lobby-players" class="player-list">
-                <li>Player 1 (You)</li>
-            </ul>
-            <p id="lobby-status">Waiting for host to start...</p>
-            <button id="btn-start-game" class="btn" style="display:none" onclick="Game.start()">START RACING</button>
-            <button class="btn" style="background:#555" onclick="Network.disconnect()">Leave Lobby</button>
-        </div>
-    </div>
-
-    <div id="menu-garage" class="ui-layer">
+    <div id="screen-garage" class="screen">
         <h1>GARAGE</h1>
         <div class="panel">
-            <h2 style="color:#ffd700">Money: $<span id="garage-money">0</span></h2>
-            
-            <div class="stat-row">
-                <span>Top Speed (<span id="stat-speed-lvl">Lv 1</span>)</span>
-                <button class="btn" style="padding: 5px 15px; font-size:1rem;" onclick="Garage.upgradeSpeed()">Upgrade ($<span id="cost-speed">100</span>)</button>
-            </div>
-            <div class="stat-row">
-                <span>Acceleration (<span id="stat-accel-lvl">Lv 1</span>)</span>
-                <button class="btn" style="padding: 5px 15px; font-size:1rem;" onclick="Garage.upgradeAccel()">Upgrade ($<span id="cost-accel">100</span>)</button>
+            <div class="stats-container">
+                <div class="stat-row">
+                    <h3>Wallet Balance</h3>
+                    <div class="stat-val">$<span id="garage-money">0</span></div>
+                </div>
+                <div class="stat-row">
+                    <div>
+                        <h3>Top Speed</h3>
+                        <span style="color:var(--text-dim)">Level <span id="lvl-speed">1</span>/10</span>
+                    </div>
+                    <button class="success" style="padding: 10px 20px;" onclick="Garage.upgrade('speed')">Upgrade $<span id="cost-speed">100</span></button>
+                </div>
+                <div class="stat-row">
+                    <div>
+                        <h3>Acceleration</h3>
+                        <span style="color:var(--text-dim)">Level <span id="lvl-accel">1</span>/10</span>
+                    </div>
+                    <button class="success" style="padding: 10px 20px;" onclick="Garage.upgrade('accel')">Upgrade $<span id="cost-accel">100</span></button>
+                </div>
+                <div class="stat-row">
+                    <div>
+                        <h3>Handling</h3>
+                        <span style="color:var(--text-dim)">Level <span id="lvl-hand">1</span>/10</span>
+                    </div>
+                    <button class="success" style="padding: 10px 20px;" onclick="Garage.upgrade('hand')">Upgrade $<span id="cost-hand">100</span></button>
+                </div>
             </div>
             
             <h3>Paint Job</h3>
-            <div class="color-picker" id="color-picker">
-                </div>
+            <div id="color-picker" class="color-picker"></div>
 
-            <button class="btn" style="background:#555; margin-top:30px;" onclick="UI.showMenu('menu-main')">Back to Menu</button>
+            <button class="secondary" style="margin-top:20px; width:100%" onclick="UI.nav('screen-main')">Back to Menu</button>
+        </div>
+    </div>
+
+    <div id="screen-join" class="screen">
+        <h1>JOIN LOBBY</h1>
+        <div class="panel">
+            <input type="text" id="join-code-input" placeholder="ENTER 5-LETTER CODE" maxlength="5" autocomplete="off">
+            <div class="btn-group">
+                <button onclick="Net.joinGame()">Connect to Host</button>
+                <button class="secondary" onclick="UI.nav('screen-main')">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-lobby" class="screen">
+        <h1>GAME LOBBY</h1>
+        <div class="panel" style="min-width: 600px;">
+            <div class="lobby-info">
+                <h3>ROOM CODE</h3>
+                <div class="lobby-code-box">
+                    <span id="lobby-code-display" class="lobby-code">.....</span>
+                </div>
+                <p style="color:var(--text-dim)">Share this code with up to 4 other players.</p>
+            </div>
+            
+            <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3>Connected Players (<span id="player-count">1</span>/5)</h3>
+            </div>
+            
+            <ul id="lobby-player-list" class="player-list">
+                </ul>
+
+            <div class="btn-group" style="margin-top: 20px;">
+                <button id="btn-start-game" class="success" style="display:none; font-size:1.5rem;" onclick="Net.startGame()">START RACE</button>
+                <button id="btn-waiting-host" class="secondary" disabled style="display:none;">Waiting for Host...</button>
+                <button class="secondary" onclick="Net.disconnect()">Leave Lobby</button>
+            </div>
         </div>
     </div>
 
     <div id="hud">
-        <div id="money-display" class="hud-element">$0</div>
-        <div id="speedometer" class="hud-element">0 KPH</div>
-        <div id="powerup-display" class="hud-element">?</div>
+        <div id="hud-top-left" class="hud-panel">
+            <div id="hud-money">$0</div>
+        </div>
+        <div id="hud-top-right" class="hud-panel">
+            <ul id="leaderboard"></ul>
+        </div>
+        <div id="hud-bottom-left" class="hud-panel">
+            <div id="hud-item">?</div>
+        </div>
+        <div id="hud-bottom-right" class="hud-panel">
+            <div id="hud-speed">000 <span>KPH</span></div>
+        </div>
     </div>
-
-    <div id="game-container"></div>
+</div>
 
 <script>
 /**
- * CORE DATA & STATE
+ * UTILITIES
  */
-const PlayerData = {
-    money: parseInt(localStorage.getItem('kartMoney')) || 0,
-    speedLevel: parseInt(localStorage.getItem('kartSpeed')) || 1,
-    accelLevel: parseInt(localStorage.getItem('kartAccel')) || 1,
-    color: localStorage.getItem('kartColor') || '#ff0000',
-    save() {
-        localStorage.setItem('kartMoney', this.money);
-        localStorage.setItem('kartSpeed', this.speedLevel);
-        localStorage.setItem('kartAccel', this.accelLevel);
-        localStorage.setItem('kartColor', this.color);
+const Utils = {
+    generateID: () => Math.random().toString(36).substring(2, 7).toUpperCase(),
+    clamp: (val, min, max) => Math.min(Math.max(val, min), max),
+    lerp: (start, end, amt) => (1 - amt) * start + amt * end,
+    rand: (min, max) => Math.random() * (max - min) + min,
+    distance2D: (x1, z1, x2, z2) => Math.sqrt((x2-x1)**2 + (z2-z1)**2)
+};
+
+const UI = {
+    toast: (msg, type='info') => {
+        const c = document.getElementById('toast-container');
+        const t = document.createElement('div');
+        t.className = `toast ${type}`;
+        t.innerText = msg;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
     },
-    addMoney(amount) {
-        this.money += amount;
-        this.save();
-        UI.updateGarage();
-        UI.updateHUD();
+    nav: (screenId) => {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        if(screenId) document.getElementById(screenId).classList.add('active');
+        if(screenId === 'screen-garage') Garage.updateUI();
+    },
+    updateLobby: () => {
+        const list = document.getElementById('lobby-player-list');
+        list.innerHTML = '';
+        const players = Object.values(State.players);
+        document.getElementById('player-count').innerText = players.length;
+        
+        players.forEach(p => {
+            const li = document.createElement('li');
+            li.style.borderLeftColor = p.color;
+            if(p.isHost) li.classList.add('is-host');
+            
+            let html = `<div><span style="display:inline-block; width:15px; height:15px; border-radius:50%; background:${p.color}; margin-right:10px;"></span>`;
+            html += `<strong>${p.id === State.localId ? 'You' : 'Player ' + p.id.substring(0,4)}</strong>`;
+            if(p.isHost) html += ` <span style="color:var(--gold); font-size:0.8rem;">[HOST]</span>`;
+            html += `</div><div>Spd:${p.stats.speed} Acc:${p.stats.accel}</div>`;
+            li.innerHTML = html;
+            list.appendChild(li);
+        });
+
+        if(State.isHost) {
+            document.getElementById('btn-start-game').style.display = 'block';
+            document.getElementById('btn-waiting-host').style.display = 'none';
+        } else {
+            document.getElementById('btn-start-game').style.display = 'none';
+            document.getElementById('btn-waiting-host').style.display = 'block';
+        }
+    },
+    updateHUD: () => {
+        if(!State.inGame) return;
+        document.getElementById('hud-money').innerText = `$${Save.data.money}`;
+        if(Engine.localKart) {
+            const speed = Math.abs(Math.round(Engine.localKart.velocity.length() * 60)); // pseudo KPH
+            document.getElementById('hud-speed').innerHTML = `${speed.toString().padStart(3, '0')} <span>KPH</span>`;
+            
+            const item = Engine.localKart.item;
+            const itemMap = { 0: '?', 1: '🚀', 2: '💣', 3: '⚡' };
+            document.getElementById('hud-item').innerText = itemMap[item] || '✖';
+        }
+
+        // Leaderboard (sort by score/money for now)
+        const lb = document.getElementById('leaderboard');
+        lb.innerHTML = '';
+        const sorted = Object.values(State.players).sort((a,b) => b.score - a.score);
+        sorted.forEach((p, i) => {
+            const li = document.createElement('li');
+            li.style.color = p.id === State.localId ? var(--gold) : 'white';
+            li.innerHTML = `<span>${i+1}. ${p.id.substring(0,4)}</span><span>${p.score}</span>`;
+            lb.appendChild(li);
+        });
+    },
+    damageEffect: () => {
+        const overlay = document.getElementById('damage-overlay');
+        overlay.style.opacity = '1';
+        setTimeout(() => overlay.style.opacity = '0', 200);
     }
 };
 
-const GameState = {
-    isHost: false,
-    players: {}, // id -> data
-    localId: null,
-    inGame: false,
-    maxPlayers: 5
-};
-
-const Input = {
-    up: false, down: false, left: false, right: false, useItem: false
-};
-
 /**
- * UI CONTROLLER
+ * SAVE DATA
  */
-const UI = {
-    currentMenu: 'menu-main',
-    showMenu(menuId) {
-        document.querySelectorAll('.ui-layer').forEach(el => el.style.display = 'none');
-        document.getElementById(menuId).style.display = 'flex';
-        this.currentMenu = menuId;
-        if(menuId === 'menu-garage') this.updateGarage();
+const Save = {
+    data: { money: 500, speed: 1, accel: 1, hand: 1, color: '#ff3366' },
+    colors: ['#ff3366', '#33ccff', '#33ff33', '#ffff33', '#ff9933', '#cc33ff', '#ffffff', '#222222'],
+    load: () => {
+        const d = localStorage.getItem('kartSave');
+        if(d) Save.data = { ...Save.data, ...JSON.parse(d) };
     },
-    toast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.style.display = 'block';
-        setTimeout(() => t.style.display = 'none', 3000);
-    },
-    updateLobby() {
-        const list = document.getElementById('lobby-players');
-        list.innerHTML = '';
-        Object.keys(GameState.players).forEach((id, index) => {
-            const li = document.createElement('li');
-            li.innerText = id === GameState.localId ? `Player ${index+1} (You)` : `Player ${index+1}`;
-            li.style.borderLeft = `5px solid ${GameState.players[id].color}`;
-            list.appendChild(li);
+    save: () => localStorage.setItem('kartSave', JSON.stringify(Save.data)),
+    addMoney: (amt) => { Save.data.money += amt; Save.save(); UI.updateHUD(); }
+};
+Save.load();
+
+const Garage = {
+    updateUI: () => {
+        document.getElementById('garage-money').innerText = Save.data.money;
+        ['speed', 'accel', 'hand'].forEach(stat => {
+            const lvl = Save.data[stat];
+            document.getElementById(`lvl-${stat}`).innerText = lvl;
+            document.getElementById(`cost-${stat}`).innerText = lvl >= 10 ? 'MAX' : lvl * 150;
+            document.querySelector(`button[onclick="Garage.upgrade('${stat}')"]`).disabled = lvl >= 10;
         });
-        
-        if(GameState.isHost) {
-            document.getElementById('btn-start-game').style.display = 'block';
-            document.getElementById('lobby-status').style.display = 'none';
-        }
-    },
-    updateGarage() {
-        document.getElementById('garage-money').innerText = PlayerData.money;
-        document.getElementById('stat-speed-lvl').innerText = `Lv ${PlayerData.speedLevel}`;
-        document.getElementById('stat-accel-lvl').innerText = `Lv ${PlayerData.accelLevel}`;
-        document.getElementById('cost-speed').innerText = PlayerData.speedLevel * 100;
-        document.getElementById('cost-accel').innerText = PlayerData.accelLevel * 100;
         
         const cp = document.getElementById('color-picker');
         cp.innerHTML = '';
-        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff', '#222222'];
-        colors.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'color-swatch' + (PlayerData.color === c ? ' selected' : '');
-            div.style.backgroundColor = c;
-            div.onclick = () => { PlayerData.color = c; PlayerData.save(); this.updateGarage(); };
-            cp.appendChild(div);
+        Save.colors.forEach(c => {
+            const d = document.createElement('div');
+            d.className = `color-swatch ${Save.data.color === c ? 'active' : ''}`;
+            d.style.backgroundColor = c;
+            d.onclick = () => { Save.data.color = c; Save.save(); Garage.updateUI(); };
+            cp.appendChild(d);
         });
     },
-    updateHUD() {
-        document.getElementById('money-display').innerText = `$${PlayerData.money}`;
-        if(Engine.localKart) {
-            const speed = Math.abs(Math.round(Engine.localKart.velocity.length() * 10));
-            document.getElementById('speedometer').innerText = `${speed} KPH`;
+    upgrade: (stat) => {
+        const cost = Save.data[stat] * 150;
+        if(Save.data.money >= cost && Save.data[stat] < 10) {
+            Save.data.money -= cost;
+            Save.data[stat]++;
+            Save.save();
+            Garage.updateUI();
+            UI.toast('Upgrade Successful!', 'success');
+            AudioSys.play('upgrade');
+        } else if (Save.data[stat] >= 10) {
+            UI.toast('Max Level Reached!', 'warning');
+        } else {
+            UI.toast('Not enough money!', 'warning');
+            AudioSys.play('error');
         }
     }
 };
 
 /**
- * GARAGE CONTROLLER
+ * AUDIO SYSTEM (Web Audio API Synthesizer)
  */
-const Garage = {
-    upgradeSpeed() {
-        const cost = PlayerData.speedLevel * 100;
-        if(PlayerData.money >= cost && PlayerData.speedLevel < 10) {
-            PlayerData.money -= cost;
-            PlayerData.speedLevel++;
-            PlayerData.save();
-            UI.updateGarage();
-            UI.toast("Top Speed Upgraded!");
-        } else if (PlayerData.speedLevel >= 10) {
-            UI.toast("Max Level Reached!");
-        } else {
-            UI.toast("Not enough money!");
-        }
-    },
-    upgradeAccel() {
-        const cost = PlayerData.accelLevel * 100;
-        if(PlayerData.money >= cost && PlayerData.accelLevel < 10) {
-            PlayerData.money -= cost;
-            PlayerData.accelLevel++;
-            PlayerData.save();
-            UI.updateGarage();
-            UI.toast("Acceleration Upgraded!");
-        } else if (PlayerData.accelLevel >= 10) {
-            UI.toast("Max Level Reached!");
-        } else {
-            UI.toast("Not enough money!");
+const AudioSys = {
+    ctx: null, enabled: true,
+    init: () => { if(!AudioSys.ctx) AudioSys.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+    play: (type) => {
+        if(!AudioSys.enabled) return;
+        AudioSys.init();
+        const t = AudioSys.ctx.currentTime;
+        const osc = AudioSys.ctx.createOscillator();
+        const gain = AudioSys.ctx.createGain();
+        osc.connect(gain); gain.connect(AudioSys.ctx.destination);
+        
+        if(type === 'coin') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(1200, t + 0.1);
+            gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.3, t + 0.05); gain.gain.linearRampToValueAtTime(0, t + 0.3);
+            osc.start(t); osc.stop(t + 0.3);
+        } else if (type === 'upgrade') {
+            osc.type = 'square'; osc.frequency.setValueAtTime(400, t); osc.frequency.setValueAtTime(600, t+0.1); osc.frequency.setValueAtTime(800, t+0.2);
+            gain.gain.setValueAtTime(0.1, t); gain.gain.linearRampToValueAtTime(0, t + 0.4);
+            osc.start(t); osc.stop(t + 0.4);
+        } else if (type === 'error') {
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, t); osc.frequency.linearRampToValueAtTime(100, t+0.2);
+            gain.gain.setValueAtTime(0.2, t); gain.gain.linearRampToValueAtTime(0, t + 0.2);
+            osc.start(t); osc.stop(t + 0.2);
+        } else if (type === 'shoot') {
+            osc.type = 'square'; osc.frequency.setValueAtTime(200, t); osc.frequency.exponentialRampToValueAtTime(50, t+0.2);
+            gain.gain.setValueAtTime(0.2, t); gain.gain.exponentialRampToValueAtTime(0.01, t+0.2);
+            osc.start(t); osc.stop(t+0.2);
+        } else if (type === 'hit') {
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, t);
+            gain.gain.setValueAtTime(0.5, t); gain.gain.exponentialRampToValueAtTime(0.01, t+0.3);
+            osc.start(t); osc.stop(t+0.3);
         }
     }
 };
+
+const Settings = {
+    toggleAudio: () => { AudioSys.enabled = !AudioSys.enabled; UI.toast(`Audio ${AudioSys.enabled ? 'ON' : 'OFF'}`); }
+};
+
+/**
+ * GAME STATE & INPUT
+ */
+const State = {
+    isHost: false, inGame: false, localId: null, players: {}, 
+    maxPlayers: 5, tickRate: 20 // Server updates per sec
+};
+
+const Input = {
+    up:0, down:0, left:0, right:0, action:0,
+    bind: () => {
+        window.addEventListener('keydown', e => Input.set(e.code, 1));
+        window.addEventListener('keyup', e => Input.set(e.code, 0));
+    },
+    set: (code, val) => {
+        if(code==='ArrowUp'||code==='KeyW') Input.up=val;
+        if(code==='ArrowDown'||code==='KeyS') Input.down=val;
+        if(code==='ArrowLeft'||code==='KeyA') Input.left=val;
+        if(code==='ArrowRight'||code==='KeyD') Input.right=val;
+        if(code==='Space') Input.action=val;
+    },
+    getState: () => ({u:Input.up, d:Input.down, l:Input.left, r:Input.right, a:Input.action})
+};
+Input.bind();
 
 /**
  * NETWORKING (PEERJS)
+ * Uses public STUN servers for robust NAT traversal.
  */
-const Network = {
-    peer: null,
-    connections: {}, // host uses this to talk to clients
-    hostConn: null,  // client uses this to talk to host
+const Net = {
+    peer: null, hostConn: null, clients: {},
     
-    initPeer() {
-        return new Promise((resolve) => {
-            // Generate random 5 letter code
-            const id = Math.random().toString(36).substring(2, 7).toUpperCase();
-            this.peer = new Peer(id, { debug: 2 });
-            
-            this.peer.on('open', (peerId) => {
-                GameState.localId = peerId;
-                resolve(peerId);
+    initPeer: () => {
+        return new Promise((resolve, reject) => {
+            const id = Utils.generateID();
+            Net.peer = new Peer(id, {
+                config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] },
+                debug: 1
             });
-            
-            this.peer.on('error', (err) => {
-                console.error(err);
-                UI.toast("Network Error: " + err.type);
-                UI.showMenu('menu-main');
-            });
+            Net.peer.on('open', pid => { State.localId = pid; resolve(pid); });
+            Net.peer.on('error', err => { UI.toast(`Net Error: ${err.type}`, 'warning'); console.error(err); reject(err); });
         });
     },
 
-    async hostGame() {
-        GameState.isHost = true;
-        UI.showMenu('menu-lobby');
-        const id = await this.initPeer();
-        document.getElementById('lobby-code-display').innerText = id;
-        
-        GameState.players[id] = { color: PlayerData.color, speed: PlayerData.speedLevel, accel: PlayerData.accelLevel, isHost: true };
-        UI.updateLobby();
-
-        this.peer.on('connection', (conn) => {
-            if(Object.keys(GameState.players).length >= GameState.maxPlayers) {
-                conn.send({ type: 'rejected', reason: 'Lobby full' });
-                setTimeout(() => conn.close(), 500);
-                return;
-            }
-            if(GameState.inGame) {
-                conn.send({ type: 'rejected', reason: 'Game already started' });
-                setTimeout(() => conn.close(), 500);
-                return;
-            }
-
-            this.connections[conn.peer] = conn;
+    hostGame: async () => {
+        UI.nav('screen-loading');
+        document.getElementById('loading-text').innerText = "CREATING LOBBY...";
+        try {
+            await Net.initPeer();
+            State.isHost = true;
+            State.players[State.localId] = { id: State.localId, isHost: true, stats: Save.data, color: Save.data.color, score: 0 };
             
-            conn.on('data', (data) => this.handleClientData(conn.peer, data));
-            conn.on('close', () => {
-                delete this.connections[conn.peer];
-                delete GameState.players[conn.peer];
-                if(GameState.inGame) Engine.removeKart(conn.peer);
-                this.broadcastLobbyState();
-                UI.updateLobby();
+            Net.peer.on('connection', conn => {
+                if(Object.keys(State.players).length >= State.maxPlayers || State.inGame) {
+                    conn.send({ type: 'reject', msg: 'Lobby full or game started' });
+                    setTimeout(()=>conn.close(), 500); return;
+                }
+                
+                conn.on('data', data => Net.handleClientMsg(conn.peer, data));
+                conn.on('close', () => Net.removeClient(conn.peer));
+                Net.clients[conn.peer] = conn;
             });
-        });
-    },
-
-    async joinGame() {
-        const code = document.getElementById('join-code').value.toUpperCase();
-        if(code.length !== 5) return UI.toast("Invalid Code");
-        
-        GameState.isHost = false;
-        const id = await this.initPeer();
-        
-        this.hostConn = this.peer.connect(code, { reliable: true });
-        
-        this.hostConn.on('open', () => {
-            UI.showMenu('menu-lobby');
-            document.getElementById('lobby-code-display').innerText = code;
             
-            // Send our data to host
-            this.hostConn.send({ 
-                type: 'join', 
-                data: { color: PlayerData.color, speed: PlayerData.speedLevel, accel: PlayerData.accelLevel } 
-            });
-        });
-        
-        this.hostConn.on('data', (data) => this.handleHostData(data));
-        this.hostConn.on('close', () => {
-            UI.toast("Disconnected from Host");
-            this.disconnect();
-        });
-    },
-
-    disconnect() {
-        if(this.peer) this.peer.destroy();
-        GameState.players = {};
-        this.connections = {};
-        this.hostConn = null;
-        GameState.inGame = false;
-        Engine.stop();
-        UI.showMenu('menu-main');
-    },
-
-    // --- HOST LOGIC ---
-    handleClientData(peerId, msg) {
-        if(msg.type === 'join') {
-            GameState.players[peerId] = msg.data;
-            this.broadcastLobbyState();
+            document.getElementById('lobby-code-display').innerText = State.localId;
+            UI.nav('screen-lobby');
             UI.updateLobby();
-        } else if (msg.type === 'input') {
-            if(GameState.inGame && Engine.karts[peerId]) {
-                Engine.karts[peerId].inputs = msg.data;
-            }
+            UI.toast('Lobby Created!', 'success');
+        } catch(e) { UI.nav('screen-main'); }
+    },
+
+    joinGame: async () => {
+        const code = document.getElementById('join-code-input').value.toUpperCase();
+        if(code.length !== 5) return UI.toast('Invalid Code length');
+        UI.nav('screen-loading');
+        document.getElementById('loading-text').innerText = "CONNECTING...";
+        
+        try {
+            await Net.initPeer();
+            State.isHost = false;
+            Net.hostConn = Net.peer.connect(code, { reliable: true });
+            
+            Net.hostConn.on('open', () => {
+                Net.hostConn.send({ type: 'join', data: { id: State.localId, stats: Save.data, color: Save.data.color, score: 0 } });
+            });
+            
+            Net.hostConn.on('data', Net.handleHostMsg);
+            Net.hostConn.on('close', Net.disconnect);
+        } catch(e) { UI.nav('screen-main'); }
+    },
+
+    disconnect: () => {
+        if(Net.peer) Net.peer.destroy();
+        Net.peer = null; Net.hostConn = null; Net.clients = {}; State.players = {};
+        if(State.inGame) Engine.stop();
+        UI.nav('screen-main');
+        UI.toast('Disconnected');
+    },
+
+    startGame: () => {
+        if(!State.isHost) return;
+        const seed = Math.random();
+        Net.broadcast({ type: 'start', seed: seed });
+        Engine.start(seed);
+    },
+
+    // Host handlers
+    handleClientMsg: (pid, msg) => {
+        if(msg.type === 'join') {
+            State.players[pid] = msg.data;
+            Net.broadcastLobby();
+            UI.updateLobby();
+        } else if (msg.type === 'input' && State.inGame && Engine.karts[pid]) {
+            Engine.karts[pid].netInput = msg.data;
         }
     },
-    
-    broadcastLobbyState() {
-        const state = { type: 'lobby_update', players: GameState.players };
-        Object.values(this.connections).forEach(c => c.send(state));
+    removeClient: (pid) => {
+        delete Net.clients[pid];
+        delete State.players[pid];
+        if(State.inGame && Engine.karts[pid]) {
+            Engine.scene.remove(Engine.karts[pid].mesh);
+            delete Engine.karts[pid];
+        }
+        Net.broadcastLobby();
+        UI.updateLobby();
     },
-
-    broadcastGameState() {
-        if(!GameState.inGame) return;
-        const state = { type: 'game_update', karts: {}, powerups: Engine.powerupManager.getState() };
+    broadcast: (msg) => { Object.values(Net.clients).forEach(c => c.send(msg)); },
+    broadcastLobby: () => Net.broadcast({ type: 'lobby_sync', players: State.players }),
+    broadcastGame: () => {
+        if(!State.inGame) return;
+        const snap = { k: {}, p: Engine.items.getState(), w: Engine.weapons.getState(), s: {} };
         for(let id in Engine.karts) {
             const k = Engine.karts[id];
-            state.karts[id] = {
-                px: k.mesh.position.x, py: k.mesh.position.y, pz: k.mesh.position.z,
-                rx: k.mesh.rotation.x, ry: k.mesh.rotation.y, rz: k.mesh.rotation.z
-            };
+            snap.k[id] = { p: k.mesh.position.toArray(), r: k.mesh.rotation.toArray(), v: k.velocity.toArray() };
+            snap.s[id] = State.players[id].score;
         }
-        Object.values(this.connections).forEach(c => c.send(state));
+        Net.broadcast({ type: 'game_sync', snap: snap });
     },
 
-    // --- CLIENT LOGIC ---
-    handleHostData(msg) {
-        if(msg.type === 'rejected') {
-            UI.toast(msg.reason);
-            this.disconnect();
-        } else if (msg.type === 'lobby_update') {
-            GameState.players = msg.players;
-            UI.updateLobby();
-        } else if (msg.type === 'start_game') {
-            Game.initClientEngine(msg.seed);
-        } else if (msg.type === 'game_update') {
-            Engine.syncState(msg);
+    // Client handlers
+    handleHostMsg: (msg) => {
+        if(msg.type === 'reject') { UI.toast(msg.msg, 'warning'); Net.disconnect(); }
+        else if (msg.type === 'lobby_sync') { 
+            State.players = msg.players; 
+            document.getElementById('lobby-code-display').innerText = Net.hostConn.peer;
+            UI.nav('screen-lobby'); UI.updateLobby(); 
         }
+        else if (msg.type === 'start') { Engine.start(msg.seed); }
+        else if (msg.type === 'game_sync') { Engine.applySnapshot(msg.snap); }
+        else if (msg.type === 'event') { Engine.handleNetEvent(msg.evt); }
     },
-
-    sendInput() {
-        if(GameState.isHost) return; // Host processes input locally
-        if(!this.hostConn) return;
-        this.hostConn.send({ type: 'input', data: Input });
+    sendInput: () => {
+        if(!State.isHost && Net.hostConn && State.inGame) {
+            Net.hostConn.send({ type: 'input', data: Input.getState() });
+        }
     }
 };
 
 /**
- * 3D ENGINE (THREE.JS)
+ * 3D ENGINE & PHYSICS
  */
 class Kart {
-    constructor(id, data, isLocal, startPos) {
-        this.id = id;
-        this.isLocal = isLocal;
-        this.data = data;
+    constructor(pid, data, isLocal, startPos) {
+        this.pid = pid; this.isLocal = isLocal; this.data = data;
+        this.velocity = new THREE.Vector3(); this.angularVel = 0;
         
-        // Physics variables
-        this.velocity = new THREE.Vector3();
-        this.acceleration = 0;
-        this.maxSpeed = 1.0 + (data.speed * 0.05);
-        this.accelRate = 0.02 + (data.accel * 0.002);
-        this.friction = 0.95;
-        this.turnSpeed = 0.05;
-        this.angle = 0;
+        // Stats mapping
+        const spdLvl = data.stats.speed; const accLvl = data.stats.accel; const handLvl = data.stats.hand;
+        this.maxSpeed = 1.5 + (spdLvl * 0.1);
+        this.accel = 0.05 + (accLvl * 0.005);
+        this.turnSpeed = 0.04 + (handLvl * 0.003);
+        this.friction = 0.96;
         
-        this.inputs = { up:false, down:false, left:false, right:false };
-        
-        // 3D Mesh creation
-        const geometry = new THREE.BoxGeometry(2, 1, 3);
-        const material = new THREE.MeshLambertMaterial({ color: data.color });
-        this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.position.copy(startPos);
-        this.mesh.castShadow = true;
-        this.mesh.receiveShadow = true;
-        
-        // Add wheels
-        const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
-        wheelGeo.rotateZ(Math.PI / 2);
-        const wheelMat = new THREE.MeshBasicMaterial({color: 0x111111});
-        const w1 = new THREE.Mesh(wheelGeo, wheelMat); w1.position.set(1.2, -0.5, 1);
-        const w2 = new THREE.Mesh(wheelGeo, wheelMat); w2.position.set(-1.2, -0.5, 1);
-        const w3 = new THREE.Mesh(wheelGeo, wheelMat); w3.position.set(1.2, -0.5, -1);
-        const w4 = new THREE.Mesh(wheelGeo, wheelMat); w4.position.set(-1.2, -0.5, -1);
-        this.mesh.add(w1, w2, w3, w4);
+        this.item = 0; // 0: none, 1: missile, 2: mine, 3: boost
+        this.cooldown = 0;
+        this.hp = 100;
+        this.invuln = 0;
 
-        // Direction indicator
-        const dirGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-        const dirMat = new THREE.MeshBasicMaterial({color: 0xffffff});
-        const dir = new THREE.Mesh(dirGeo, dirMat);
-        dir.position.set(0, 0.5, 1.5);
-        this.mesh.add(dir);
+        this.netInput = { u:0, d:0, l:0, r:0, a:0 };
+
+        // Visuals
+        this.mesh = new THREE.Group();
+        this.mesh.position.copy(startPos);
+        
+        // Body
+        const bodyGeo = new THREE.BoxGeometry(2, 0.8, 3.5);
+        const bodyMat = new THREE.MeshPhongMaterial({color: data.color, shininess: 100});
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.6; body.castShadow = true;
+        this.mesh.add(body);
+
+        // Cockpit
+        const cockpit = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 1.5), new THREE.MeshPhongMaterial({color: 0x111111}));
+        cockpit.position.set(0, 1.2, -0.2);
+        this.mesh.add(cockpit);
+
+        // Wheels
+        const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.5, 16); wheelGeo.rotateZ(Math.PI/2);
+        const wheelMat = new THREE.MeshPhongMaterial({color: 0x222222});
+        const pos = [[1.2, 0.6, 1.2], [-1.2, 0.6, 1.2], [1.2, 0.6, -1.2], [-1.2, 0.6, -1.2]];
+        this.wheels = pos.map(p => {
+            const w = new THREE.Mesh(wheelGeo, wheelMat);
+            w.position.set(...p); w.castShadow = true;
+            this.mesh.add(w); return w;
+        });
+
+        // Name tag
+        const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 64;
+        const ctx = canvas.getContext('2d'); ctx.fillStyle = 'white'; ctx.font = '30px Arial'; ctx.textAlign = 'center'; ctx.fillText(pid.substring(0,5), 128, 40);
+        const tex = new THREE.CanvasTexture(canvas);
+        const spriteMat = new THREE.SpriteMaterial({ map: tex });
+        this.nameTag = new THREE.Sprite(spriteMat);
+        this.nameTag.position.set(0, 3, 0); this.nameTag.scale.set(4, 1, 1);
+        this.mesh.add(this.nameTag);
 
         Engine.scene.add(this.mesh);
     }
 
     update() {
-        const i = this.isLocal ? Input : this.inputs;
+        if(this.invuln > 0) this.invuln--;
+        if(this.cooldown > 0) this.cooldown--;
 
-        // Acceleration
-        if(i.up) this.acceleration = this.accelRate;
-        else if (i.down) this.acceleration = -this.accelRate;
-        else this.acceleration = 0;
+        // Blinking if invuln
+        this.mesh.visible = (this.invuln % 10 < 5);
 
-        // Apply turning only if moving
-        const speed = this.velocity.length();
-        if(speed > 0.05) {
-            const turnMult = i.down ? -1 : 1; // Reverse steering
-            if(i.left) this.angle += this.turnSpeed * turnMult;
-            if(i.right) this.angle -= this.turnSpeed * turnMult;
+        const inp = this.isLocal ? Input.getState() : this.netInput;
+        
+        // Action
+        if(inp.a && this.cooldown <= 0 && this.item !== 0) {
+            Engine.useItem(this);
+            this.cooldown = 30;
         }
 
-        // Apply physics
-        this.mesh.rotation.y = this.angle;
+        // Turning
+        const speedRatio = this.velocity.length() / this.maxSpeed;
+        if(speedRatio > 0.1) {
+            let turn = 0;
+            if(inp.l) turn = this.turnSpeed;
+            if(inp.r) turn = -this.turnSpeed;
+            if(inp.d) turn *= -1; // reverse turn
+            this.mesh.rotation.y += turn;
+        }
+
+        // Acceleration
+        const dir = new THREE.Vector3(0,0,1).applyQuaternion(this.mesh.quaternion);
+        let acc = 0;
+        if(inp.u) acc = this.accel;
+        if(inp.d) acc = -this.accel * 0.5;
         
-        const direction = new THREE.Vector3(Math.sin(this.angle), 0, Math.cos(this.angle));
-        direction.multiplyScalar(this.acceleration);
-        
-        this.velocity.add(direction);
-        this.velocity.multiplyScalar(this.friction); // Friction
-        
-        // Clamp speed
-        if(this.velocity.length() > this.maxSpeed) {
+        dir.multiplyScalar(acc);
+        this.velocity.add(dir);
+        this.velocity.multiplyScalar(this.friction);
+
+        // Limits
+        if(this.velocity.length() > this.maxSpeed && this.item !== 3) {
             this.velocity.normalize().multiplyScalar(this.maxSpeed);
         }
 
+        // Apply velocity
         this.mesh.position.add(this.velocity);
 
-        // Very basic track collision (stay inside bounds)
-        if(this.mesh.position.x > 95) this.mesh.position.x = 95;
-        if(this.mesh.position.x < -95) this.mesh.position.x = -95;
-        if(this.mesh.position.z > 95) this.mesh.position.z = 95;
-        if(this.mesh.position.z < -95) this.mesh.position.z = -95;
+        // Wheel animation
+        this.wheels.forEach(w => w.rotation.x += this.velocity.length() * 0.2);
 
-        // Check powerup collision (Host only checks)
-        if(GameState.isHost) {
-            Engine.powerupManager.checkCollisions(this);
+        // Very basic track boundaries (circle arena 150 radius)
+        const dist = Math.sqrt(this.mesh.position.x**2 + this.mesh.position.z**2);
+        if(dist > 140) {
+            const normal = new THREE.Vector3(this.mesh.position.x, 0, this.mesh.position.z).normalize();
+            this.mesh.position.copy(normal.multiplyScalar(140));
+            this.velocity.reflect(normal).multiplyScalar(0.5); // bounce
         }
+
+        // Items logic (Host only)
+        if(State.isHost) {
+            Engine.items.checkCollision(this);
+            Engine.weapons.checkCollision(this);
+        }
+    }
+
+    hit() {
+        if(this.invuln > 0) return;
+        this.velocity.multiplyScalar(0.1);
+        this.velocity.y = 1.5; // pop up
+        this.invuln = 60;
+        this.item = 0;
+        if(this.isLocal) { UI.damageEffect(); AudioSys.play('hit'); }
+        // Drop money
+        State.players[this.pid].score = Math.max(0, State.players[this.pid].score - 10);
     }
 }
 
-class PowerupManager {
+class ItemManager {
     constructor() {
-        this.items = [];
-        this.geo = new THREE.SphereGeometry(1, 16, 16);
-        this.mat = new THREE.MeshLambertMaterial({color: 0xffff00, emissive: 0xaaaa00});
+        this.boxes = [];
+        const geo = new THREE.BoxGeometry(2,2,2);
+        const canvas = document.createElement('canvas'); canvas.width=128; canvas.height=128;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle='#ff00ff'; ctx.fillRect(0,0,128,128); ctx.fillStyle='#00ffff'; ctx.font='80px Arial'; ctx.fillText('?',30,95);
+        const mat = new THREE.MeshPhongMaterial({map: new THREE.CanvasTexture(canvas), emissive: 0x330033});
         
-        if(GameState.isHost) {
-            this.spawnPoints = [
-                {x: 0, z: 20}, {x: 20, z: 20}, {x: -20, z: -20}, {x: 50, z: 0}, {x: -50, z: 50}
-            ];
-            this.spawnPoints.forEach((p, i) => this.spawnItem(i, p.x, p.z));
+        if(State.isHost) {
+            for(let i=0; i<15; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = Utils.rand(20, 130);
+                this.spawn(i, Math.cos(angle)*r, Math.sin(angle)*r, geo, mat);
+            }
         }
     }
-
-    spawnItem(id, x, z) {
-        const mesh = new THREE.Mesh(this.geo, this.mat);
-        mesh.position.set(x, 1, z);
-        Engine.scene.add(mesh);
-        this.items.push({ id, mesh, active: true, respawnTimer: 0 });
+    spawn(id, x, z, geo, mat) {
+        const m = new THREE.Mesh(geo, mat); m.position.set(x, 1.5, z); m.castShadow = true;
+        Engine.scene.add(m);
+        this.boxes.push({ id, mesh: m, active: true, timer: 0 });
     }
-
     update() {
-        const time = Date.now() * 0.003;
-        this.items.forEach(item => {
-            if(item.active) {
-                item.mesh.position.y = 1 + Math.sin(time + item.id) * 0.5;
-                item.mesh.rotation.y += 0.05;
-            } else if (GameState.isHost) {
-                item.respawnTimer--;
-                if(item.respawnTimer <= 0) {
-                    item.active = true;
-                    item.mesh.visible = true;
-                }
+        const t = Date.now() * 0.002;
+        this.boxes.forEach(b => {
+            if(b.active) { b.mesh.rotation.y += 0.02; b.mesh.rotation.x = Math.sin(t+b.id)*0.2; }
+            else if(State.isHost) {
+                b.timer--;
+                if(b.timer <= 0) b.active = true;
+            }
+            b.mesh.visible = b.active;
+        });
+    }
+    checkCollision(kart) {
+        this.boxes.forEach(b => {
+            if(b.active && kart.mesh.position.distanceTo(b.mesh.position) < 3.5) {
+                b.active = false; b.timer = 300;
+                const itemType = Math.floor(Utils.rand(1, 4)); // 1:missile, 2:mine, 3:boost
+                kart.item = itemType;
+                State.players[kart.pid].score += 5; // Reward for getting box
+                
+                // Event sync
+                Net.broadcast({type:'event', evt:{action:'pickup', pid:kart.pid, item:itemType}});
+                if(kart.isLocal) Engine.handleNetEvent({action:'pickup', pid:kart.pid, item:itemType});
             }
         });
     }
+    getState() { return this.boxes.map(b => b.active); }
+    setState(state) { state.forEach((active, i) => { if(this.boxes[i]) this.boxes[i].active = active; }); }
+}
 
-    checkCollisions(kart) {
-        this.items.forEach(item => {
-            if(item.active) {
-                const dist = kart.mesh.position.distanceTo(item.mesh.position);
-                if(dist < 3) {
-                    item.active = false;
-                    item.mesh.visible = false;
-                    item.respawnTimer = 300; // 300 frames
-                    
-                    // Give money
-                    if(kart.id === GameState.localId) {
-                        PlayerData.addMoney(50);
-                    } else {
-                        // Send money packet to client
-                        const conn = Network.connections[kart.id];
-                        if(conn) conn.send({type: 'give_money', amount: 50});
-                    }
-                }
+class WeaponManager {
+    constructor() { this.weps = []; }
+    spawnMissile(pos, dir, owner) {
+        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 2, 8), new THREE.MeshPhongMaterial({color:0xff0000}));
+        mesh.rotation.x = Math.PI/2; mesh.position.copy(pos); mesh.position.y = 1;
+        
+        // Orient to direction
+        const target = pos.clone().add(dir);
+        mesh.lookAt(target);
+        
+        Engine.scene.add(mesh);
+        this.weps.push({ type: 1, mesh, dir, owner, life: 150 });
+        AudioSys.play('shoot');
+    }
+    spawnMine(pos, owner) {
+        const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 8), new THREE.MeshPhongMaterial({color:0x222222}));
+        mesh.position.copy(pos); mesh.position.y = 1;
+        Engine.scene.add(mesh);
+        this.weps.push({ type: 2, mesh, owner, life: 1000 });
+    }
+    update() {
+        for(let i = this.weps.length - 1; i >= 0; i--) {
+            const w = this.weps[i];
+            w.life--;
+            if(w.type === 1) { // Missile
+                w.mesh.position.add(w.dir.clone().multiplyScalar(3.0)); // Fast speed
+                Engine.particles.spawn(w.mesh.position, 0xffaa00, 1);
+            }
+            if(w.life <= 0) { Engine.scene.remove(w.mesh); this.weps.splice(i, 1); }
+        }
+    }
+    checkCollision(kart) {
+        for(let i = this.weps.length - 1; i >= 0; i--) {
+            const w = this.weps[i];
+            if(w.owner === kart.pid && w.type === 1 && w.life > 140) continue; // Don't hit self immediately with missile
+            
+            if(kart.mesh.position.distanceTo(w.mesh.position) < 3.5) {
+                kart.hit();
+                Engine.particles.spawnExplosion(w.mesh.position);
+                Engine.scene.remove(w.mesh);
+                this.weps.splice(i, 1);
+                Net.broadcast({type:'event', evt:{action:'hit', pid:kart.pid, pos:w.mesh.position.toArray()}});
+                if(kart.isLocal) Engine.handleNetEvent({action:'hit', pid:kart.pid, pos:w.mesh.position.toArray()});
+            }
+        }
+    }
+    getState() { return this.weps.map(w => ({ t:w.type, p:w.mesh.position.toArray(), d:w.dir?w.dir.toArray():null })); }
+    setState(state) {
+        // Simple client side recreation (visual only)
+        this.weps.forEach(w => Engine.scene.remove(w.mesh));
+        this.weps = [];
+        state.forEach(w => {
+            const pos = new THREE.Vector3().fromArray(w.p);
+            if(w.t === 1) {
+                const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,2,8), new THREE.MeshBasicMaterial({color:0xff0000}));
+                mesh.position.copy(pos);
+                if(w.d) { const dir = new THREE.Vector3().fromArray(w.d); mesh.lookAt(pos.clone().add(dir)); }
+                mesh.rotation.x = Math.PI/2;
+                Engine.scene.add(mesh); this.weps.push({mesh});
+            } else if (w.t === 2) {
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(1,8,8), new THREE.MeshBasicMaterial({color:0x222222}));
+                mesh.position.copy(pos); Engine.scene.add(mesh); this.weps.push({mesh});
             }
         });
     }
+}
 
-    getState() {
-        return this.items.map(i => i.active);
+class ParticleSystem {
+    constructor() {
+        this.parts = [];
+        this.geo = new THREE.BoxGeometry(0.5,0.5,0.5);
     }
-
-    syncState(states) {
-        states.forEach((active, i) => {
-            if(this.items[i]) {
-                this.items[i].active = active;
-                this.items[i].mesh.visible = active;
-            } else {
-                // Initial creation on client
-                this.spawnItem(i, 0, 0); // Pos synced later
-            }
-        });
+    spawn(pos, color, amt) {
+        const mat = new THREE.MeshBasicMaterial({color});
+        for(let i=0; i<amt; i++) {
+            const m = new THREE.Mesh(this.geo, mat); m.position.copy(pos);
+            const v = new THREE.Vector3(Utils.rand(-0.2,0.2), Utils.rand(0.1,0.5), Utils.rand(-0.2,0.2));
+            Engine.scene.add(m); this.parts.push({m,v, life:20});
+        }
+    }
+    spawnExplosion(pos) {
+        AudioSys.play('hit');
+        this.spawn(pos, 0xff5500, 20);
+        this.spawn(pos, 0xffff00, 10);
+    }
+    update() {
+        for(let i = this.parts.length - 1; i >= 0; i--) {
+            const p = this.parts[i];
+            p.m.position.add(p.v); p.m.scale.multiplyScalar(0.9); p.life--;
+            if(p.life <= 0) { Engine.scene.remove(p.m); this.parts.splice(i,1); }
+        }
     }
 }
 
 const Engine = {
-    scene: null,
-    camera: null,
-    renderer: null,
-    karts: {},
-    localKart: null,
-    powerupManager: null,
-    animationId: null,
-    lastTick: 0,
+    scene: null, camera: null, renderer: null,
+    karts: {}, localKart: null,
+    items: null, weapons: null, particles: null,
+    animFrame: null, lastTick: 0,
 
-    init(seed) {
-        const container = document.getElementById('game-container');
-        container.style.display = 'block';
-        container.innerHTML = '';
+    start: (seed) => {
+        document.getElementById('ui-layer').style.pointerEvents = 'none';
+        UI.nav(null); // Hide all screens
+        document.getElementById('hud').style.display = 'block';
+        document.getElementById('crosshair').style.display = 'block';
+        State.inGame = true;
 
-        this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x87CEEB);
-        this.scene.fog = new THREE.Fog(0x87CEEB, 20, 150);
+        Engine.scene = new THREE.Scene();
+        Engine.scene.background = new THREE.Color(0x87CEEB);
+        Engine.scene.fog = new THREE.FogExp2(0x87CEEB, 0.005);
 
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        Engine.camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000);
         
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.shadowMap.enabled = true;
-        container.appendChild(this.renderer.domElement);
+        Engine.renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game-canvas'), antialias: true });
+        Engine.renderer.setSize(window.innerWidth, window.innerHeight);
+        Engine.renderer.shadowMap.enabled = true;
 
         // Lighting
-        const amb = new THREE.AmbientLight(0x404040, 0.5);
-        this.scene.add(amb);
+        const amb = new THREE.AmbientLight(0xffffff, 0.4); Engine.scene.add(amb);
         const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-        dir.position.set(50, 100, 50);
-        dir.castShadow = true;
-        dir.shadow.camera.top = 100;
-        dir.shadow.camera.bottom = -100;
-        dir.shadow.camera.left = -100;
-        dir.shadow.camera.right = 100;
-        this.scene.add(dir);
+        dir.position.set(100, 150, 50); dir.castShadow = true;
+        dir.shadow.camera.left = -150; dir.shadow.camera.right = 150;
+        dir.shadow.camera.top = 150; dir.shadow.camera.bottom = -150;
+        Engine.scene.add(dir);
 
-        // Track (Ground)
-        const planeGeo = new THREE.PlaneGeometry(200, 200);
+        // Environment (Procedural Arena)
+        Math.seedrandom = seed; // pseudo seed
+        const floorGeo = new THREE.CylinderGeometry(150, 150, 1, 64);
         
-        // Simple checkerboard texture via canvas
-        const canvas = document.createElement('canvas');
-        canvas.width = 256; canvas.height = 256;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#2c3e50'; ctx.fillRect(0,0,256,256);
-        ctx.fillStyle = '#34495e'; 
-        ctx.fillRect(0,0,128,128); ctx.fillRect(128,128,128,128);
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(20, 20);
-
-        const planeMat = new THREE.MeshLambertMaterial({ map: tex });
-        const plane = new THREE.Mesh(planeGeo, planeMat);
-        plane.rotation.x = -Math.PI / 2;
-        plane.receiveShadow = true;
-        this.scene.add(plane);
+        // Procedural Checker Texture
+        const fcvs = document.createElement('canvas'); fcvs.width=512; fcvs.height=512;
+        const fctx = fcvs.getContext('2d');
+        fctx.fillStyle='#2c3e50'; fctx.fillRect(0,0,512,512);
+        fctx.fillStyle='#34495e';
+        for(let i=0;i<8;i++) for(let j=0;j<8;j++) if((i+j)%2===0) fctx.fillRect(i*64,j*64,64,64);
+        const ftex = new THREE.CanvasTexture(fcvs); ftex.wrapS = ftex.wrapT = THREE.RepeatWrapping; ftex.repeat.set(20,20);
+        
+        const floorMat = new THREE.MeshStandardMaterial({ map: ftex, roughness: 0.8 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.position.y = -0.5; floor.receiveShadow = true;
+        Engine.scene.add(floor);
 
         // Walls
-        const wallGeo = new THREE.BoxGeometry(200, 10, 5);
-        const wallMat = new THREE.MeshLambertMaterial({color: 0x880000});
-        const w1 = new THREE.Mesh(wallGeo, wallMat); w1.position.set(0,5,-100); this.scene.add(w1);
-        const w2 = new THREE.Mesh(wallGeo, wallMat); w2.position.set(0,5,100); this.scene.add(w2);
-        const w3 = new THREE.Mesh(wallGeo, wallMat); w3.position.set(-100,5,0); w3.rotation.y = Math.PI/2; this.scene.add(w3);
-        const w4 = new THREE.Mesh(wallGeo, wallMat); w4.position.set(100,5,0); w4.rotation.y = Math.PI/2; this.scene.add(w4);
+        const wallGeo = new THREE.TorusGeometry(150, 5, 16, 64);
+        const wallMat = new THREE.MeshPhongMaterial({color: 0xff3366});
+        const wall = new THREE.Mesh(wallGeo, wallMat); wall.rotation.x = Math.PI/2; wall.position.y = 2; wall.castShadow = true;
+        Engine.scene.add(wall);
 
-        // Populate Players
-        let spawnIndex = 0;
-        const spawnOffsets = [[0,0], [10,0], [-10,0], [5, 10], [-5, 10]];
+        // Obstacles
+        for(let i=0; i<20; i++) {
+            const o = new THREE.Mesh(new THREE.BoxGeometry(4, 10, 4), new THREE.MeshPhongMaterial({color:0xaaaaaa}));
+            const a = Utils.rand(0, Math.PI*2); const r = Utils.rand(20, 130);
+            o.position.set(Math.cos(a)*r, 5, Math.sin(a)*r);
+            o.castShadow = true; Engine.scene.add(o);
+        }
+
+        Engine.items = new ItemManager();
+        Engine.weapons = new WeaponManager();
+        Engine.particles = new ParticleSystem();
+
+        // Spawn Players
+        const players = Object.values(State.players);
+        players.forEach((p, i) => {
+            const angle = (i / players.length) * Math.PI * 2;
+            const startPos = new THREE.Vector3(Math.cos(angle)*20, 0, Math.sin(angle)*20);
+            const isLoc = p.id === State.localId;
+            const k = new Kart(p.id, p, isLoc, startPos);
+            Engine.karts[p.id] = k;
+            if(isLoc) Engine.localKart = k;
+        });
+
+        window.addEventListener('resize', Engine.resize);
+        Engine.loop();
+    },
+
+    useItem: (kart) => {
+        const item = kart.item; kart.item = 0;
+        const dir = new THREE.Vector3(0,0,1).applyQuaternion(kart.mesh.quaternion);
         
-        for(let id in GameState.players) {
-            const data = GameState.players[id];
-            const isLocal = id === GameState.localId;
-            const startPos = new THREE.Vector3(spawnOffsets[spawnIndex][0], 1, spawnOffsets[spawnIndex][1]);
-            
-            const kart = new Kart(id, data, isLocal, startPos);
-            this.karts[id] = kart;
-            if(isLocal) {
-                this.localKart = kart;
-                this.localKart.inputs = Input; // bind local inputs
+        if(State.isHost) {
+            if(item === 1) Engine.weapons.spawnMissile(kart.mesh.position.clone().add(dir.clone().multiplyScalar(4)), dir, kart.pid);
+            if(item === 2) Engine.weapons.spawnMine(kart.mesh.position.clone().sub(dir.clone().multiplyScalar(4)), kart.pid);
+        }
+        
+        if(item === 3) {
+            kart.velocity.add(dir.multiplyScalar(3.0)); // Boost
+            AudioSys.play('shoot');
+            if(kart.isLocal) Engine.particles.spawn(kart.mesh.position, 0x00ffff, 30);
+        }
+
+        if(kart.isLocal) UI.updateHUD();
+        Net.broadcast({type:'event', evt:{action:'use', pid:kart.pid, item:item}});
+    },
+
+    handleNetEvent: (evt) => {
+        if(evt.action === 'pickup') {
+            if(Engine.karts[evt.pid]) {
+                Engine.karts[evt.pid].item = evt.item;
+                AudioSys.play('coin');
+                if(evt.pid === State.localId) { Save.addMoney(10); UI.updateHUD(); }
             }
-            spawnIndex++;
         }
-
-        this.powerupManager = new PowerupManager();
-
-        window.addEventListener('resize', this.onWindowResize.bind(this));
-        
-        GameState.inGame = true;
-        document.getElementById('hud').style.display = 'block';
-        document.querySelectorAll('.ui-layer').forEach(el => el.style.display = 'none');
-        
-        this.loop();
-    },
-
-    removeKart(id) {
-        if(this.karts[id]) {
-            this.scene.remove(this.karts[id].mesh);
-            delete this.karts[id];
+        else if (evt.action === 'hit') {
+            Engine.particles.spawnExplosion(new THREE.Vector3().fromArray(evt.pos));
+            if(Engine.karts[evt.pid]) Engine.karts[evt.pid].hit();
+        }
+        else if (evt.action === 'use') {
+            const k = Engine.karts[evt.pid];
+            if(k && evt.item === 3) Engine.particles.spawn(k.mesh.position, 0x00ffff, 30);
         }
     },
 
-    syncState(state) {
-        // Sync karts
-        for(let id in state.karts) {
-            if(id !== GameState.localId && this.karts[id]) { // Don't override local prediction
-                const sd = state.karts[id];
-                const k = this.karts[id].mesh;
-                // Simple interpolation could go here, snapping for now
-                k.position.set(sd.px, sd.py, sd.pz);
-                k.rotation.set(sd.rx, sd.ry, sd.rz);
+    applySnapshot: (snap) => {
+        for(let id in snap.k) {
+            if(id === State.localId) continue; // Don't override local prediction
+            const k = Engine.karts[id];
+            if(k) {
+                // Interpolation could go here, snapping for simple implementation
+                k.mesh.position.fromArray(snap.k[id].p);
+                k.mesh.rotation.fromArray(snap.k[id].r);
+                k.velocity.fromArray(snap.k[id].v);
             }
         }
-        // Sync powerups
-        this.powerupManager.syncState(state.powerups);
+        for(let id in snap.s) { if(State.players[id]) State.players[id].score = snap.s[id]; }
+        if(!State.isHost) {
+            Engine.items.setState(snap.p);
+            Engine.weapons.setState(snap.w);
+        }
+        UI.updateHUD();
     },
 
-    loop() {
-        if(!GameState.inGame) return;
-        this.animationId = requestAnimationFrame(this.loop.bind(this));
+    loop: () => {
+        if(!State.inGame) return;
+        Engine.animFrame = requestAnimationFrame(Engine.loop);
 
         const now = Date.now();
 
-        // Host updates physics for ALL karts based on inputs
-        if(GameState.isHost) {
-            for(let id in this.karts) {
-                this.karts[id].update();
-            }
-            // Broadcast state at 20fps
-            if(now - this.lastTick > 50) {
-                Network.broadcastGameState();
-                this.lastTick = now;
-            }
-        } else {
-            // Client predicts local physics
-            if(this.localKart) this.localKart.update();
-            // Send input to host
-            if(now - this.lastTick > 50) {
-                Network.sendInput();
-                this.lastTick = now;
-            }
-        }
+        // Update entities
+        Object.values(Engine.karts).forEach(k => k.update());
+        Engine.items.update();
+        Engine.weapons.update();
+        Engine.particles.update();
 
-        this.powerupManager.update();
+        // Network tick
+        if(now - Engine.lastTick > (1000 / State.tickRate)) {
+            if(State.isHost) Engine.broadcastGame();
+            else Net.sendInput();
+            Engine.lastTick = now;
+        }
 
         // Camera follow
-        if(this.localKart) {
-            const relativeCameraOffset = new THREE.Vector3(0, 5, -10);
-            const cameraOffset = relativeCameraOffset.applyMatrix4(this.localKart.mesh.matrixWorld);
-            this.camera.position.lerp(cameraOffset, 0.1);
-            this.camera.lookAt(this.localKart.mesh.position);
+        if(Engine.localKart) {
+            const k = Engine.localKart.mesh;
+            const offset = new THREE.Vector3(0, 5, -12).applyQuaternion(k.quaternion);
+            const targetPos = k.position.clone().add(offset);
+            Engine.camera.position.lerp(targetPos, 0.1);
+            Engine.camera.lookAt(k.position.clone().add(new THREE.Vector3(0,2,0)));
+            
+            // Speed FOV effect
+            const speed = Engine.localKart.velocity.length();
+            Engine.camera.fov = Utils.lerp(Engine.camera.fov, 70 + speed * 10, 0.1);
+            Engine.camera.updateProjectionMatrix();
         }
 
-        UI.updateHUD();
-        this.renderer.render(this.scene, this.camera);
+        Engine.renderer.render(Engine.scene, Engine.camera);
     },
 
-    stop() {
-        if(this.animationId) cancelAnimationFrame(this.animationId);
-        document.getElementById('game-container').style.display = 'none';
+    stop: () => {
+        if(Engine.animFrame) cancelAnimationFrame(Engine.animFrame);
+        State.inGame = false;
         document.getElementById('hud').style.display = 'none';
-        if(this.renderer) {
-            this.renderer.dispose();
-            document.getElementById('game-container').innerHTML = '';
-        }
-        this.karts = {};
-        this.localKart = null;
+        document.getElementById('crosshair').style.display = 'none';
+        document.getElementById('ui-layer').style.pointerEvents = 'auto';
+        if(Engine.renderer) Engine.renderer.dispose();
+        document.getElementById('game-canvas').remove();
+        const c = document.createElement('canvas'); c.id = 'game-canvas';
+        document.getElementById('game-canvas-container').appendChild(c);
     },
 
-    onWindowResize() {
-        if(!this.camera || !this.renderer) return;
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+    resize: () => {
+        if(!Engine.camera) return;
+        Engine.camera.aspect = window.innerWidth / window.innerHeight;
+        Engine.camera.updateProjectionMatrix();
+        Engine.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 };
 
-/**
- * GAME FLOW CONTROLLER
- */
-const Game = {
-    start() {
-        if(!GameState.isHost) return;
-        const seed = Math.random();
-        
-        // Broadcast start
-        const msg = { type: 'start_game', seed: seed };
-        Object.values(Network.connections).forEach(c => c.send(msg));
-        
-        // Start local host engine
-        Engine.init(seed);
-    },
-    
-    initClientEngine(seed) {
-        Engine.init(seed);
-    }
-};
-
-/**
- * INPUT HANDLING
- */
-window.addEventListener('keydown', (e) => {
-    switch(e.code) {
-        case 'ArrowUp': case 'KeyW': Input.up = true; break;
-        case 'ArrowDown': case 'KeyS': Input.down = true; break;
-        case 'ArrowLeft': case 'KeyA': Input.left = true; break;
-        case 'ArrowRight': case 'KeyD': Input.right = true; break;
-        case 'Space': Input.useItem = true; break;
-    }
-});
-
-window.addEventListener('keyup', (e) => {
-    switch(e.code) {
-        case 'ArrowUp': case 'KeyW': Input.up = false; break;
-        case 'ArrowDown': case 'KeyS': Input.down = false; break;
-        case 'ArrowLeft': case 'KeyA': Input.left = false; break;
-        case 'ArrowRight': case 'KeyD': Input.right = false; break;
-        case 'Space': Input.useItem = false; break;
-    }
-});
-
-// INITIALIZATION
-PlayerData.save();
-UI.updateGarage();
-
+// Initial Setup
+UI.nav('screen-main');
 </script>
 </body>
 </html>

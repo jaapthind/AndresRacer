@@ -1644,6 +1644,17 @@ class KinematicActor {
             this.mesh.visible = Math.floor(this.state.invuln * 15) % 2 === 0;
         } else {
             this.mesh.visible = true;
+            // PASTE THE BLOCK HERE:
+            const distFromCenter = new THREE.Vector3().subVectors(this.mesh.position, TrackOrchestrator.trackGen.curve.getPointAt(this.physics.trackDist % 1.0)).length();
+            if (distFromCenter > TrackOrchestrator.trackGen.trackWidth / 2) {
+                const pushDir = new THREE.Vector3().subVectors(TrackOrchestrator.trackGen.curve.getPointAt(this.physics.trackDist % 1.0), this.mesh.position).normalize();
+                this.physics.velocity.add(pushDir.multiplyScalar(100));
+                this.state.wallHits = (this.state.wallHits || 0) + 1;
+                if (this.state.wallHits >= 3) {
+                    this.state.wallHits = 0; this.physics.velocity.set(0,0,0); this.state.invuln = 3.0;
+                    UIManager.notify("SYSTEM STALLED: 3X IMPACT DETECTED", "error");
+                }
+            } else if (this.physics.isGrounded) { this.state.wallHits = 0; }
         }
 
         // If falling off the track into the void

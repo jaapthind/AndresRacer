@@ -1389,25 +1389,31 @@ class KinematicActor {
         }
 
         // Steering Logic
-        if (this.physicsData.isGrounded) {
-            let turnAmt = 0;
-            if (input.a) turnAmt += this.tuning.handling * dt;
-            if (input.d) turnAmt -= this.tuning.handling * dt;
+        // Steering Logic - Optimized for High Sensitivity
+            if (this.physicsData.isGrounded) {
+                let turnAmt = 0;
+                // 1. Increased base sensitivity (multiplied by 2.5)
+                const sensitivity = this.tuning.handling * 2.5; 
+                
+                if (input.a) turnAmt += sensitivity * dt;
+                if (input.d) turnAmt -= sensitivity * dt;
+                
+                // 2. Modified speed check: allow turning even at very low speeds
+                const currentSpeed = this.physicsData.velocity.length();
+                const turnDampening = MathUtils.clamp(currentSpeed * 0.5, 0.3, 1.0);
+                turnAmt *= turnDampening;
+                
+                // 3. Proper reverse steering toggle
+                const localZ = new THREE.Vector3(0,0,1).applyQuaternion(this.meshGroup.quaternion);
+                const isMovingBackwards = this.physicsData.velocity.dot(localZ) < -0.1;
+                if (isMovingBackwards) turnAmt *= -1;
             
-            // Reduce turning at low speeds
-            const speedRatio = this.physicsData.velocity.length() / this.tuning.maxVel;
-            turnAmt *= Math.min(speedRatio * 5, 1.0);
-            
-            // Reverse turning direction if going backwards
-            const localZ = new THREE.Vector3(0,0,1).applyQuaternion(this.meshGroup.quaternion);
-            if (this.physicsData.velocity.dot(localZ) < -0.1) turnAmt *= -1;
-
-            this.meshGroup.rotateY(turnAmt);
-            
-            // Wheel visual rotation
-            this.wheels[0].rotation.y = turnAmt * 10;
-            this.wheels[1].rotation.y = turnAmt * 10;
-        }
+                this.meshGroup.rotateY(turnAmt);
+                
+                // Visual wheel sync (exaggerated for feedback)
+                this.wheels[0].rotation.y = (input.a ? 0.6 : (input.d ? -0.6 : 0));
+                this.wheels[1].rotation.y = (input.a ? 0.6 : (input.d ? -0.6 : 0));
+            }
 
         // Acceleration Logic
         const forwardDir = new THREE.Vector3(0,0,1).applyQuaternion(this.meshGroup.quaternion);

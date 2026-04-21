@@ -1054,12 +1054,7 @@ const UIManager = {
         sorted.forEach((peer, i) => {
             const li = document.createElement('li');
             li.style.color = peer.id === GlobalState.localUUID ? 'var(--core-primary)' : '#fff';
-            // Crown the Leader
-            const isLead = i === 0;
-            const leadIcon = isLead ? '👑 ' : '';
-            const leadColor = isLead ? 'var(--accent-gold)' : (peer.id === GlobalState.localUUID ? 'var(--core-primary)' : '#fff');
-            li.style.color = leadColor;
-            li.innerHTML = `<span>${leadIcon}${i + 1}. ${peer.id.substring(0,4)}</span><span>${peer.score} PTS</span>`;
+            li.innerHTML = `<span>${i + 1}. ${peer.id.substring(0,4)}</span><span>${peer.score} PTS</span>`;
             ladderDom.appendChild(li);
         });
     },
@@ -1344,7 +1339,7 @@ class TrackGenerator {
     constructor(scene, seed) {
         this.scene = scene;
         this.curve = null;
-        this.trackWidth = 48; // Very wide track for multiplayer chaos
+        this.trackWidth = 16; // Very wide track for multiplayer chaos
         this.trackMesh = null;
         this.boundaries = [];
         this.buildCircuit(seed);
@@ -1477,18 +1472,6 @@ class TrackGenerator {
 
         // Build Start/Finish Gate
         this.buildStartGate(pts[0], frenetFrames.tangents[0], frenetFrames.normals[0]);
-        // --- NEON GUARDRAILS ---
-        const railGeo = new THREE.BoxGeometry(0.5, 3.0, 2); 
-        const railMat = new THREE.MeshStandardMaterial({color: 0x00ffcc, emissive: 0x00ffcc});
-        for(let i=0; i < pts.length; i += 2) {
-            const right = frenetFrames.binormals[i];
-            const leftRail = new THREE.Mesh(railGeo, railMat);
-            leftRail.position.copy(pts[i]).add(right.clone().multiplyScalar(-this.trackWidth/2));
-            leftRail.lookAt(pts[i].clone().add(frenetFrames.tangents[i]));
-            const rightRail = leftRail.clone();
-            rightRail.position.copy(pts[i]).add(right.clone().multiplyScalar(this.trackWidth/2));
-            this.scene.add(leftRail, rightRail);
-        }
     }
 
     buildStartGate(pos, tangent, normal) {
@@ -1586,7 +1569,7 @@ class KinematicActor {
 
         this.buildChassis(profile.color);
         this.raycaster = new THREE.Raycaster();
-        this.raycaster.far = 4.0;
+        this.raycaster.far = 10.0;
         
         this.placeOnTrack(startDist);
     }
@@ -1661,32 +1644,39 @@ class KinematicActor {
             this.mesh.visible = Math.floor(this.state.invuln * 15) % 2 === 0;
         } else {
             this.mesh.visible = true;
-            // Barriers removed: Logic deleted to allow flying off the track
+            // PASTE THE BLOCK HERE:
+            const distFromCenter = new THREE.Vector3().subVectors(this.mesh.position, TrackOrchestrator.trackGen.curve.getPointAt(this.physics.trackDist % 1.0)).length();
+            if (distFromCenter > TrackOrchestrator.trackGen.trackWidth / 2) {
+                const pushDir = new THREE.Vector3().subVectors(TrackOrchestrator.trackGen.curve.getPointAt(this.physics.trackDist % 1.0), this.mesh.position).normalize();
+                this.physics.velocity.add(pushDir.multiplyScalar(100));
+                this.state.wallHits = (this.state.wallHits || 0) + 1;
+                if (this.state.wallHits >= 3) {
+                    this.state.wallHits = 0; this.physics.velocity.set(0,0,0); this.state.invuln = 3.0;
+                    UIManager.notify("SYSTEM STALLED: 3X IMPACT DETECTED", "error");
+                }
+            } else if (this.physics.isGrounded) { this.state.wallHits = 0; }
         }
 
         // If falling off the track into the void
-        // Respawn trigger with 3-second delay
-        if (this.mesh.position.y < -80) {
-            if (!this.state.respawnTimer) {
-                this.state.respawnTimer = 3.0; // Start 3s clock
-                if (this.isLocal) UIManager.notify("OFF TRACK: RESPAWNING IN 3...", "warn");
+        if (this.mesh.position.y < -50) {
+            if (!this.state.falling) {
+                this.state.falling = true;
+                if (this.isLocal) AudioSystem.playEvent('fall');
             }
-            
-            this.state.respawnTimer -= dt;
-            
-            if (this.state.respawnTimer <= 0) {
+            // Respawn trigger
+            if (this.mesh.position.y < -150) {
+                // Find nearest point on curve to respawn
                 this.placeOnTrack(this.physics.trackDist);
-                this.state.respawnTimer = null;
-                this.state.falling = false;
-                this.state.invuln = 2.0; // Blink for 2s after respawn
+                if (this.isLocal && GlobalState.netRole === 'HOST') {
+                    GlobalState.registry[this.uid].score = Math.max(0, GlobalState.registry[this.uid].score - 10);
+                }
             }
         }
 
         const input = this.isLocal ? InputDevice.snapshot() : this.netInput;
 
         // Ground Detection via Raycast against track Ribbon
-        this.raycaster.far = 3.0; // Ignore anything more than 5 units below
-        this.raycaster.set(this.mesh.position.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0));
+        this.raycaster.set(this.mesh.position.clone().add(new THREE.Vector3(0, 1, 0)), new THREE.Vector3(0, -1, 0));
         const hits = this.raycaster.intersectObject(trackMesh);
 
         this.physics.isGrounded = false;
@@ -1764,8 +1754,8 @@ class KinematicActor {
         }
 
         // Apply motion
-        this.physics.velocity.multiplyScalar(0.98); // Anti-slide damping
         this.mesh.position.add(this.physics.velocity.clone().multiplyScalar(dt));
+
         // Spin wheels
         const wr = this.physics.velocity.length() * dt * 2;
         this.wheels.forEach(w => w.rotation.x += wr);

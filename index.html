@@ -1699,19 +1699,21 @@ class KinematicActor {
         // Dynamics
         if (this.physics.isGrounded) {
             // Steering
+            // --- IMPROVED STEERING ---
             let turn = 0;
             const spd = this.physics.velocity.length();
-            const damp = MathLib.clamp(spd * 0.05, 0.3, 1.0); // Allow turning even when slow
+            // Ensure we can always turn a little, even at low speeds
+            const turnAbility = MathLib.clamp(spd * 0.05, 0.5, 1.2); 
             
-            if (input.a) turn += this.tuning.steer * damp * dt;
-            if (input.d) turn -= this.tuning.steer * damp * dt;
+            if (input.a) turn += this.tuning.steer * turnAbility * dt;
+            if (input.d) turn -= this.tuning.steer * turnAbility * dt;
             
-            const localZ = new THREE.Vector3(0,0,1).applyQuaternion(this.mesh.quaternion);
-            if (this.physics.velocity.dot(localZ) < -0.1) turn *= -1; // Reverse turn flip
-
-            this.mesh.rotateY(turn);
+            // Use a rotation quaternion instead of rotateY to prevent "Gimbal Lock"
+            const rotationQuaternion = new THREE.Quaternion();
+            rotationQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), turn);
+            this.mesh.quaternion.multiply(rotationQuaternion);
             
-            // Visual wheel steering
+            // Visual wheel steering (keep this as is)
             this.wheels[0].rotation.y = input.a ? 0.6 : (input.d ? -0.6 : 0);
             this.wheels[1].rotation.y = input.a ? 0.6 : (input.d ? -0.6 : 0);
 
@@ -1895,23 +1897,32 @@ class WeaponSystem {
         }
     }
 
-    check(actor) {
+        check(actor) {
         if (GlobalState.netRole !== 'HOST') return;
         for (let i = this.live.length - 1; i >= 0; i--) {
             const w = this.live[i];
-            if (w.o === actor.uid && w.t === 1 && w.life > 3.8) continue; // Immunity window
             
-            if (actor.mesh.position.distanceTo(w.m.position) < 5.0) {
-                actor.applyHit(w.m.position, 100);
-                TrackOrchestrator.vfxSys.explode(w.m.position);
+            // Don't hit the person who just dropped it for 0.5 seconds
+            if (w.o === actor.uid && w.life > 19.5) continue; 
+            
+            // Increase 5.0 to 8.0 or 10.0 if you are going very fast
+            const hitRadius = 8.0; 
+            
+            if (actor.mesh.position.distanceTo(w.m.position) < hitRadius) {
+                // Apply physics kick
+                actor.applyHit(w.m.position, 120); 
+                
+                // Tell EVERYONE an explosion happened at these coordinates
+                NetworkManager.broadcast({ 
+                    op: 'EVENT', 
+                    evt: { t: 'HIT', id: actor.uid, p: w.m.position.toArray() } 
+                });
+                
+                // Process it locally for the host too
+                CoreEngine.processEvent({ t: 'HIT', id: actor.uid, p: w.m.position.toArray() });
+    
                 this.scene.remove(w.m);
                 this.live.splice(i, 1);
-                
-                GlobalState.registry[actor.uid].score = Math.max(0, GlobalState.registry[actor.uid].score - 10);
-                if (GlobalState.registry[w.o]) GlobalState.registry[w.o].score += 20;
-                
-                NetworkManager.broadcast({ op: 'EVENT', evt: { t: 'HIT', id: actor.uid, p: w.m.position.toArray() } });
-                if (actor.isLocal) CoreEngine.processEvent({ t: 'HIT', id: actor.uid, p: w.m.position.toArray() });
             }
         }
     }
@@ -2062,7 +2073,7 @@ const CoreEngine = {
             const off = new THREE.Vector3(0, 6, -15).applyQuaternion(tgt.quaternion);
             const goal = tgt.position.clone().add(off);
             
-            CoreEngine.cam.position.lerp(goal, 0.15);
+            CoreEngine.cam.position.lerp(goal, 0.3);
             CoreEngine.cam.lookAt(tgt.position.clone().add(new THREE.Vector3(0,2,0)));
             
             // Dynamic FOV for speed sensation

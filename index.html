@@ -1586,7 +1586,7 @@ class KinematicActor {
 
         this.buildChassis(profile.color);
         this.raycaster = new THREE.Raycaster();
-        this.raycaster.far = 10.0;
+        this.raycaster.far = 4.0;
         
         this.placeOnTrack(startDist);
     }
@@ -1661,40 +1661,31 @@ class KinematicActor {
             this.mesh.visible = Math.floor(this.state.invuln * 15) % 2 === 0;
         } else {
             this.mesh.visible = true;
-            // PASTE THE BLOCK HERE:
-            // Intersection Fix: Only check walls if we are close to the track height
-            const trackPt = TrackOrchestrator.trackGen.curve.getPointAt(this.physics.trackDist % 1.0);
-            const verticalDiff = Math.abs(this.mesh.position.y - trackPt.y);
-            const distFromCenter = new THREE.Vector3(this.mesh.position.x, 0, this.mesh.position.z).distanceTo(new THREE.Vector3(trackPt.x, 0, trackPt.z));
-
-            // Intersection Logic: Only push if we are on the same vertical level as the track
-            if (verticalDiff < 8 && distFromCenter > TrackOrchestrator.trackGen.trackWidth / 2) {
-                const pushDir = new THREE.Vector3().subVectors(trackPt, this.mesh.position);
-                pushDir.y = 0; 
-                this.physics.velocity.add(pushDir.normalize().multiplyScalar(50));
-            }
+            // Barriers removed: Logic deleted to allow flying off the track
         }
 
         // If falling off the track into the void
-        if (this.mesh.position.y < -50) {
-            if (!this.state.falling) {
-                this.state.falling = true;
-                if (this.isLocal) AudioSystem.playEvent('fall');
+        // Respawn trigger with 3-second delay
+        if (this.mesh.position.y < -80) {
+            if (!this.state.respawnTimer) {
+                this.state.respawnTimer = 3.0; // Start 3s clock
+                if (this.isLocal) UIManager.notify("OFF TRACK: RESPAWNING IN 3...", "warn");
             }
-            // Respawn trigger
-            if (this.mesh.position.y < -150) {
-                // Find nearest point on curve to respawn
+            
+            this.state.respawnTimer -= dt;
+            
+            if (this.state.respawnTimer <= 0) {
                 this.placeOnTrack(this.physics.trackDist);
-                if (this.isLocal && GlobalState.netRole === 'HOST') {
-                    GlobalState.registry[this.uid].score = Math.max(0, GlobalState.registry[this.uid].score - 10);
-                }
+                this.state.respawnTimer = null;
+                this.state.falling = false;
+                this.state.invuln = 2.0; // Blink for 2s after respawn
             }
         }
 
         const input = this.isLocal ? InputDevice.snapshot() : this.netInput;
 
         // Ground Detection via Raycast against track Ribbon
-        this.raycaster.far = 5.0; // Ignore anything more than 5 units below
+        this.raycaster.far = 3.0; // Ignore anything more than 5 units below
         this.raycaster.set(this.mesh.position.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0));
         const hits = this.raycaster.intersectObject(trackMesh);
 

@@ -1662,16 +1662,17 @@ class KinematicActor {
         } else {
             this.mesh.visible = true;
             // PASTE THE BLOCK HERE:
-            const distFromCenter = new THREE.Vector3().subVectors(this.mesh.position, TrackOrchestrator.trackGen.curve.getPointAt(this.physics.trackDist % 1.0)).length();
-            if (distFromCenter > TrackOrchestrator.trackGen.trackWidth / 2) {
-                const pushDir = new THREE.Vector3().subVectors(TrackOrchestrator.trackGen.curve.getPointAt(this.physics.trackDist % 1.0), this.mesh.position).normalize();
-                this.physics.velocity.add(pushDir.multiplyScalar(100));
-                this.state.wallHits = (this.state.wallHits || 0) + 1;
-                if (this.state.wallHits >= 3) {
-                    this.state.wallHits = 0; this.physics.velocity.set(0,0,0); this.state.invuln = 3.0;
-                    UIManager.notify("SYSTEM STALLED: 3X IMPACT DETECTED", "error");
-                }
-            } else if (this.physics.isGrounded) { this.state.wallHits = 0; }
+            // Intersection Fix: Only check walls if we are close to the track height
+            const trackPt = TrackOrchestrator.trackGen.curve.getPointAt(this.physics.trackDist % 1.0);
+            const verticalDiff = Math.abs(this.mesh.position.y - trackPt.y);
+            const distFromCenter = new THREE.Vector3(this.mesh.position.x, 0, this.mesh.position.z).distanceTo(new THREE.Vector3(trackPt.x, 0, trackPt.z));
+
+            // Intersection Logic: Only push if we are on the same vertical level as the track
+            if (verticalDiff < 8 && distFromCenter > TrackOrchestrator.trackGen.trackWidth / 2) {
+                const pushDir = new THREE.Vector3().subVectors(trackPt, this.mesh.position);
+                pushDir.y = 0; 
+                this.physics.velocity.add(pushDir.normalize().multiplyScalar(50));
+            }
         }
 
         // If falling off the track into the void
@@ -1693,7 +1694,8 @@ class KinematicActor {
         const input = this.isLocal ? InputDevice.snapshot() : this.netInput;
 
         // Ground Detection via Raycast against track Ribbon
-        this.raycaster.set(this.mesh.position.clone().add(new THREE.Vector3(0, 1, 0)), new THREE.Vector3(0, -1, 0));
+        this.raycaster.far = 5.0; // Ignore anything more than 5 units below
+        this.raycaster.set(this.mesh.position.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0));
         const hits = this.raycaster.intersectObject(trackMesh);
 
         this.physics.isGrounded = false;

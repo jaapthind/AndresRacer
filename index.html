@@ -1054,7 +1054,12 @@ const UIManager = {
         sorted.forEach((peer, i) => {
             const li = document.createElement('li');
             li.style.color = peer.id === GlobalState.localUUID ? 'var(--core-primary)' : '#fff';
-            li.innerHTML = `<span>${i + 1}. ${peer.id.substring(0,4)}</span><span>${peer.score} PTS</span>`;
+            // Crown the Leader
+            const isLead = i === 0;
+            const leadIcon = isLead ? '👑 ' : '';
+            const leadColor = isLead ? 'var(--accent-gold)' : (peer.id === GlobalState.localUUID ? 'var(--core-primary)' : '#fff');
+            li.style.color = leadColor;
+            li.innerHTML = `<span>${leadIcon}${i + 1}. ${peer.id.substring(0,4)}</span><span>${peer.score} PTS</span>`;
             ladderDom.appendChild(li);
         });
     },
@@ -1472,6 +1477,18 @@ class TrackGenerator {
 
         // Build Start/Finish Gate
         this.buildStartGate(pts[0], frenetFrames.tangents[0], frenetFrames.normals[0]);
+        // --- NEON GUARDRAILS ---
+        const railGeo = new THREE.BoxGeometry(0.5, 3.0, 2); 
+        const railMat = new THREE.MeshStandardMaterial({color: 0x00ffcc, emissive: 0x00ffcc});
+        for(let i=0; i < pts.length; i += 2) {
+            const right = frenetFrames.binormals[i];
+            const leftRail = new THREE.Mesh(railGeo, railMat);
+            leftRail.position.copy(pts[i]).add(right.clone().multiplyScalar(-this.trackWidth/2));
+            leftRail.lookAt(pts[i].clone().add(frenetFrames.tangents[i]));
+            const rightRail = leftRail.clone();
+            rightRail.position.copy(pts[i]).add(right.clone().multiplyScalar(this.trackWidth/2));
+            this.scene.add(leftRail, rightRail);
+        }
     }
 
     buildStartGate(pos, tangent, normal) {
@@ -1754,8 +1771,8 @@ class KinematicActor {
         }
 
         // Apply motion
+        this.physics.velocity.multiplyScalar(0.98); // Anti-slide damping
         this.mesh.position.add(this.physics.velocity.clone().multiplyScalar(dt));
-
         // Spin wheels
         const wr = this.physics.velocity.length() * dt * 2;
         this.wheels.forEach(w => w.rotation.x += wr);
